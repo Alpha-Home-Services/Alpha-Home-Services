@@ -13,3 +13,4 @@ export const EQ:Record<string,EquipmentDefinition>={
  septic:{types:['Septic tank','Pump or lift station','Effluent filter','Alarm panel','Aerobic unit','Distribution box','Drain field'],size:'Capacity or size',sizePh:'1,250 gal',extra:{k:'material',l:'Material',o:['Concrete','Poly','Fiberglass','Steel','N/A']}}
 };
 export const TRADE_NAMES:Record<string,string>={hvac:'HVAC',electrical:'Electrical',plumbing:'Plumbing',septic:'Septic'};
+export const PHOTO_BUCKET='equipment-photos';

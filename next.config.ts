@@ -1,3 +1,4 @@
 import type { NextConfig } from 'next';
-const config: NextConfig = { poweredByHeader: false };
+// Photos are shrunk on the device first; this leaves room for a full-size 5 MB photo if shrinking fails.
+const config: NextConfig = { poweredByHeader: false, experimental: { serverActions: { bodySizeLimit: '6mb' } } };
 export default config;

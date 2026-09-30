@@ -7,11 +7,11 @@ This is the start of the real app, separate from the click-through prototype. It
 - Password login, sign-out, and server-verified sessions.
 - Admin, office and technician roles; no public signup or client-controlled role changes.
 - Customer search, creation and editing, main accounts and one-level tenant sub-accounts, billing recipient and payment terms.
-- Multiple buildings, equipment capture by trade, and the prototype's exact site intake fields.
+- Multiple buildings, equipment grouped by building, equipment capture and editing by trade (assigned techs can edit on site), private data plate photos, and the prototype's exact site intake fields.
 - Database policies limit techs to explicitly assigned accounts; financial/payroll tables are absent.
 - Fictional test seed. No imports of real customers, no payment SDKs, no calls, texts, emails, or integrations.
 
-The prototype remains the reference for subsequent phases. Memberships, scheduling, invoices, customer CSV import, equipment photo uploads, and offline sync are NOT implemented in this first foundation commit. Do not call Phase 1 complete until the remaining items and acceptance tests pass against a disposable database.
+The prototype remains the reference for subsequent phases. Memberships, scheduling, invoices, customer CSV import, and offline sync are NOT implemented in this first foundation commit. Do not call Phase 1 complete until the remaining items and acceptance tests pass against a disposable database.
 
 ## Run without connecting a database
 
@@ -21,7 +21,7 @@ Node 20.9+ required. Run `npm ci`, then `npm run dev`. Open http://localhost:300
 
 Do not use Alpha's production data or a production Supabase project. Prefer a local Supabase stack if Docker is available. A hosted disposable test project is also possible, but account setup and any charges must be approved separately. No project, subscription or deployment is created by this code.
 
-1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`.
+1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`, then `supabase/migrations/202610010001_equipment_editing_photos.sql` (creates the private `equipment-photos` storage bucket). If the first two were already applied, apply only the new one.
 2. Disable public signup. Create test accounts through Supabase Auth: admin@example.test, office@example.test, tech@example.test and other-tech@example.test. Use your own test passwords; none are committed. Do not send invitations or email real addresses.
 3. Using the database administrator, insert each auth user's ID into public.profiles with the corresponding role. Only a database administrator can assign roles. Example (replace the UUID with the real test Auth ID):
 
@@ -39,6 +39,7 @@ Setting the test flag is a guard against accidental configuration, NOT proof tha
 
 - Sign in as office: search test accounts; add a customer, set Net 30, edit it, add a tenant billed to its parent and add a building.
 - Add equipment under each trade, choose the right building, and save/reopen site fields.
+- Edit a piece of equipment, add a data plate photo from a phone, then retake it; the new photo replaces the old one. As the other tech, the photo can't be seen or opened.
 - Sign in as assigned tech: only its account is visible; it can record equipment and site details, but cannot create/edit customers, locations, roles or assignments.
 - Sign in as other tech: the first tech's customer is hidden, including direct URLs and direct database requests.
 - Check anonymous reads, self-promotion, cross-customer equipment locations and invalid parent billing are rejected.
@@ -48,7 +49,7 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 
 ## Next work
 
-- Finish equipment editing/photo storage with private access.
+- Apply `202610010001_equipment_editing_photos.sql` to the test project and click through equipment editing and photos.
 - Group equipment by location on the customer page, like the prototype.
 - Implement a preview-and-confirm CSV import using a fictional HCP fixture.
 - Show a clear access-denied message instead of the generic error page.
