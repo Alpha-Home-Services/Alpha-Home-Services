@@ -48,4 +48,9 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 
 ## Next work
 
-Finish equipment editing/photo storage with private access, implement a preview-and-confirm CSV import using a fictional HCP fixture, and test end to end against the isolated Supabase environment before advancing to Phase 2. Deployments and live integrations remain off.
+- Finish equipment editing/photo storage with private access.
+- Group equipment by location on the customer page, like the prototype.
+- Implement a preview-and-confirm CSV import using a fictional HCP fixture.
+- Test end to end against the isolated Supabase environment before advancing to Phase 2.
+
+Deployments and live integrations remain off.
