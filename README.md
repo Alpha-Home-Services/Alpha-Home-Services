@@ -51,8 +51,9 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 - Finish equipment editing/photo storage with private access.
 - Group equipment by location on the customer page, like the prototype.
 - Implement a preview-and-confirm CSV import using a fictional HCP fixture.
-- Offline support for techs on jobs with no cell signal.
 - Show a clear access-denied message instead of the generic error page.
 - Test end to end against the isolated Supabase environment before advancing to Phase 2.
+
+Offline support for techs on jobs with no cell signal moves to Phase 2, with the tech job page.
 
 Deployments and live integrations remain off.
