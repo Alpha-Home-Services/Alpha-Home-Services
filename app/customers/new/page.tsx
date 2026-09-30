@@ -1,0 +1,2 @@
+import {officeSession} from '@/lib/auth';import {CustomerForm} from '@/components/CustomerForm';import {Nav} from '@/components/Nav';
+export default async function NewCustomer(){const {db,profile}=await officeSession();const {data,error}=await db.from('customers').select('id,name').is('parent_id',null).order('name');if(error)throw new Error('Parent accounts could not be loaded.');return <><Nav name={profile.display_name} role={profile.role}/><h1>Add customer</h1><CustomerForm parents={data??[]}/></>}
