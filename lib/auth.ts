@@ -11,4 +11,4 @@ export async function session() {
  if(error||!profile) redirect('/login?error=access');
  return {db,user,profile:profile as {id:string;display_name:string;role:Role}};
 }
-export async function officeSession(){const s=await session();if(s.profile.role==='tech') throw new Error('Office access required.');return s;}
+export async function officeSession(){const s=await session();if(s.profile.role==='tech') redirect('/denied?reason=office');return s;}

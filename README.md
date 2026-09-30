@@ -42,6 +42,7 @@ Setting the test flag is a guard against accidental configuration, NOT proof tha
 - Edit a piece of equipment, add a data plate photo from a phone, then retake it; the new photo replaces the old one. As the other tech, the photo can't be seen or opened.
 - Sign in as assigned tech: only its account is visible; it can record equipment and site details, but cannot create/edit customers, locations, roles or assignments.
 - Sign in as other tech: the first tech's customer is hidden, including direct URLs and direct database requests.
+- As a tech, open /customers/new or a customer's /edit link directly: a "You don't have access to that" page appears instead of an error. Opening an unassigned customer's link shows "You don't have access to that customer."
 - Check anonymous reads, self-promotion, cross-customer equipment locations and invalid parent billing are rejected.
 - Refresh the browser after a save; records persist in Postgres.
 
@@ -49,10 +50,7 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 
 ## Next work
 
-- Apply `202610010001_equipment_editing_photos.sql` to the test project and click through equipment editing and photos.
-- Group equipment by location on the customer page, like the prototype.
 - Implement a preview-and-confirm CSV import using a fictional HCP fixture.
-- Show a clear access-denied message instead of the generic error page.
 - Test end to end against the isolated Supabase environment before advancing to Phase 2.
 
 Offline support for techs on jobs with no cell signal moves to Phase 2, with the tech job page.
