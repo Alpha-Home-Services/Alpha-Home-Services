@@ -6,7 +6,7 @@ test('database enforces technician, anonymous and office access boundaries',asyn
  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;grant usage on schema public,auth to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;`);
  // Minimal stand-in for Supabase Storage, which PGlite doesn't have. Supabase itself enables row level security on storage.objects.
  await db.exec(`create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text);alter table storage.objects enable row level security;grant usage on schema storage to authenticated;grant select,insert,delete on storage.objects to authenticated;`);
- await db.exec(await readFile('supabase/migrations/202609300001_foundation.sql','utf8'));await db.exec(await readFile('supabase/seed.sql','utf8'));await db.exec(await readFile('supabase/migrations/202610010001_equipment_editing_photos.sql','utf8'));
+ await db.exec(await readFile('supabase/migrations/202609300001_foundation.sql','utf8'));await db.exec(await readFile('supabase/seed.sql','utf8'));await db.exec(await readFile('supabase/migrations/202610010001_equipment_editing_photos.sql','utf8'));await db.exec(await readFile('supabase/migrations/202610020001_hcp_import.sql','utf8'));
  await db.exec(`insert into auth.users values ('${tech}'),('${office}'),('${unrelated}');insert into public.profiles values ('${tech}','Test tech','tech'),('${office}','Test office','office'),('${unrelated}','Other tech','tech');insert into public.customer_assignments values ('${customer}','${tech}');`);
  async function asUser(id:string,sql:string){await db.exec(`reset role;select set_config('request.jwt.claim.sub','${id}',false);set role authenticated;`);return db.query(sql);}
  const visible=await asUser(tech,'select id from public.customers');assert.deepEqual(visible.rows,[{id:customer}]);
@@ -39,6 +39,17 @@ test('database enforces technician, anonymous and office access boundaries',asyn
  assert.deepEqual((await asUser(tech,`select name from storage.objects`)).rows,[{name:`${customer}/${mine.id}/plate.jpg`}],'tech only sees assigned photos');
  assert.equal((await asUser(unrelated,`select name from storage.objects`)).rows.length,0);
  await asUser(unrelated,`delete from storage.objects`);assert.equal((await asUser(office,`select name from storage.objects`)).rows.length,2,'unassigned tech cannot delete photos');
+ // Housecall Pro import: office only, all-or-nothing, and each Housecall Pro customer only once.
+ const parentId='00000000-0000-4000-8000-0000000000a1',tenantId='00000000-0000-4000-8000-0000000000a2';
+ const payload=(rows:object[])=>`select public.import_hcp_customers('${JSON.stringify(rows).replace(/'/g,"''")}'::jsonb) as n`;
+ const good=[{id:parentId,name:'TEST — Import parent',type:'Commercial',hcp_id:'HCP-T-1',locations:[{name:'Building 2',address:'2 Example Rd',notes:''}]},{id:tenantId,name:'TEST — Import tenant',type:'Residential',hcp_id:'HCP-T-2',parent_id:parentId}];
+ await assert.rejects(()=>asUser(tech,payload(good)),'techs cannot import');
+ await assert.rejects(()=>asUser(office,payload([{...good[0],id:'00000000-0000-4000-8000-0000000000a9',hcp_id:'HCP-T-9'},{id:'00000000-0000-4000-8000-0000000000a8',name:'Bad row',type:'Bogus'}])),'a bad row fails the whole import');
+ assert.equal((await asUser(office,`select id from public.customers where hcp_id='HCP-T-9'`)).rows.length,0,'nothing from a failed import is saved');
+ assert.deepEqual((await asUser(office,payload(good))).rows,[{n:2}]);
+ assert.deepEqual((await asUser(office,`select parent_id,bill_to from public.customers where id='${tenantId}'`)).rows,[{parent_id:parentId,bill_to:'parent'}]);
+ assert.deepEqual((await asUser(office,`select name from public.locations where customer_id='${parentId}'`)).rows,[{name:'Building 2'}]);
+ await assert.rejects(()=>asUser(office,payload([{...good[0],id:'00000000-0000-4000-8000-0000000000a7'}])),'the same Housecall Pro customer cannot be imported twice');
  await db.exec('reset role;set role anon;');await assert.rejects(()=>db.query('select * from public.customers'));await assert.rejects(()=>db.query('select * from storage.objects'));
  }finally{await db.close();}
 });
