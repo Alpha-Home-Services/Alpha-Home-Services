@@ -77,4 +77,9 @@ Secrets live in `.env.local` and the hosting dashboard, never in code or commits
 - Never text, call, email, or charge a real customer without the owner's explicit OK.
 - Protect customer data: row-level security on every table, no secrets in the browser, no card data stored.
 - Commit to GitHub after each working step with a plain-English message.
+- Use fictional test data only. No real customers yet.
+- Keep payments, texting, emails, deployments, and live integrations off.
+- The test Supabase project already has the database setup and seed applied. Don't rerun `supabase/migrations/202609300001_foundation.sql` or `supabase/seed.sql`.
+- The test users already exist. Don't recreate them, and never ask the owner to paste passwords.
+- Alpha only. Elite Sales and Service stays separate.
 - After each phase, give the owner a short list of what to click through and test.
