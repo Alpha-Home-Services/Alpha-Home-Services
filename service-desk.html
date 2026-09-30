@@ -1,0 +1,1306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Service Desk prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F3;--surface:#FFFFFF;--sunk:#E2E7EB;--ink:#1B2A35;--muted:#5B6B77;--line:#D3DAE0;
+  --brand:#1F4A63;--brand-ink:#FFFFFF;--action:#F2A900;--action-ink:#1B2A35;
+  --good:#2E7D4F;--warn:#A85A00;--bad:#B42318;
+  --hvac:#2E6DB4;--elec:#B98000;--plumb:#14857F;--septic:#7B6A33;
+  --labor:#5B7FA0;--parts:#C4A76A;--profit:#2E7D4F;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11181E;--surface:#1A242C;--sunk:#24313B;--ink:#E6ECF0;--muted:#98A8B3;--line:#2E3C47;
+    --brand:#173A4F;--brand-ink:#FFFFFF;--action:#F2B01E;--action-ink:#1B2A35;
+    --good:#5CC08A;--warn:#F0A64A;--bad:#F07A6E;
+    --hvac:#6FA4E0;--elec:#E7B63A;--plumb:#3CC0B7;--septic:#C2AE6B;
+    --labor:#7FA3C4;--parts:#D2B878;--profit:#4FB57E;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11181E;--surface:#1A242C;--sunk:#24313B;--ink:#E6ECF0;--muted:#98A8B3;--line:#2E3C47;
+  --brand:#173A4F;--brand-ink:#FFFFFF;--action:#F2B01E;--action-ink:#1B2A35;
+  --good:#5CC08A;--warn:#F0A64A;--bad:#F07A6E;
+  --hvac:#6FA4E0;--elec:#E7B63A;--plumb:#3CC0B7;--septic:#C2AE6B;
+  --labor:#7FA3C4;--parts:#D2B878;--profit:#4FB57E;color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--hvac);outline-offset:2px}
+.num{font-family:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;font-weight:600;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-ink)}
+.top-in{max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:12px}
+.co{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;font-size:21px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{background:transparent;border:0;color:inherit;width:44px;height:44px;display:grid;place-items:center;border-radius:6px}
+.iconbtn:hover{background:rgba(255,255,255,.1)}
+
+main{max-width:760px;margin:0 auto;padding:16px 16px 120px}
+h1{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:600;font-size:30px;line-height:1.1;margin:4px 0 2px}
+h2{font-size:18px;font-weight:700;margin:0 0 4px}
+h3{font-size:16px;font-weight:700;margin:0}
+.sub{color:var(--muted);margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;margin-top:14px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.back{background:none;border:0;padding:8px 0;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:6;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-in{display:flex;max-width:760px;margin:0 auto}
+.nav button{flex:1;background:none;border:0;padding:9px 4px 11px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;min-height:62px}
+.nav button.on{color:var(--ink);font-weight:700}
+.nav button.on svg{color:var(--brand)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav button.on svg{color:var(--action)}}
+:root[data-theme="dark"] .nav button.on svg{color:var(--action)}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;margin:14px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 15px;font-size:14px;white-space:nowrap;min-height:40px}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.banner{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;margin-top:12px;padding:12px 14px;border-radius:6px;border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 12%,var(--surface));color:var(--ink);font-weight:600}
+.daylabel{margin:22px 0 2px;font-size:15px;font-weight:700;color:var(--muted)}
+
+.job{display:grid;grid-template-columns:6px 70px 1fr;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:0;margin-top:8px;overflow:hidden}
+.job:hover{border-color:var(--muted)}
+.job .stripe{background:var(--tc)}
+.job .time{padding:13px 0 12px 12px;font-size:21px;line-height:1.05}
+.job .time small{display:block;font-size:13px;color:var(--muted);font-weight:500}
+.job .body{padding:12px 12px 12px 2px;min-width:0}
+.job .name{display:block;font-weight:700}
+.job .desc{display:block;color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:13px;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--tc)}
+.tag::before{content:'';width:9px;height:9px;border-radius:2px;background:var(--tc)}
+.pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.pill.progress{background:color-mix(in srgb,var(--hvac) 16%,var(--surface));color:var(--hvac)}
+.pill.parts{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.pill.invoiced{background:color-mix(in srgb,var(--labor) 18%,var(--surface))}
+.pill.paid{background:color-mix(in srgb,var(--good) 16%,var(--surface));color:var(--good)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 14%,var(--surface));color:var(--bad)}
+
+.btn{font-weight:700;border-radius:6px;border:1px solid var(--line);background:var(--surface);padding:11px 18px;min-height:48px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--action);border-color:var(--action);color:var(--action-ink)}
+.btn.dark{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.danger{color:var(--bad)}
+.btn.block{width:100%}
+.btn.slim{min-height:40px;padding:7px 14px;font-size:14px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.actions .btn{flex:1 1 150px}
+
+.jobhead{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--tc);border-radius:6px;padding:16px;margin-top:6px}
+.dl{display:grid;grid-template-columns:minmax(120px,40%) 1fr;gap:6px 14px;margin:8px 0 0;font-size:15px}
+.dl dt{color:var(--muted)}
+.dl dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.callout{margin-top:10px;padding:10px 12px;border-radius:6px;background:var(--sunk);font-size:15px}
+.callout.warn{background:color-mix(in srgb,var(--warn) 13%,var(--surface))}
+a{color:var(--hvac);font-weight:600}
+
+.check{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.check:first-of-type{border-top:0}
+.check input{width:24px;height:24px;margin:0;accent-color:var(--good);flex:none}
+.check.done span{color:var(--muted);text-decoration:line-through}
+.progressline{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;margin:6px 0 4px}
+.progressline span{display:block;height:100%;background:var(--good)}
+
+.line{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
+.line:first-child{border-top:0}
+.line .nm{font-weight:700}
+.line .inc{font-size:13px;color:var(--muted)}
+.line .amt{font-size:21px;text-align:right}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:6px}
+.stepper button{width:40px;height:36px;border:0;background:var(--sunk);font-size:18px;font-weight:700}
+.stepper span{min-width:36px;text-align:center;font-weight:700}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);margin-top:6px;padding-top:10px}
+.total .num{font-size:30px}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:6px;color:var(--muted);text-align:center;margin:6px 0}
+
+.split{display:flex;height:16px;border-radius:3px;overflow:hidden;background:var(--sunk);margin:10px 0 8px}
+.split span{display:block;height:100%}
+.split .l{background:var(--labor)}.split .p{background:var(--parts)}.split .g{background:var(--profit)}
+.legend{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px}
+.legend .k{display:flex;align-items:center;gap:8px}
+.legend .k i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.legend .v{text-align:right;font-size:18px}
+.gp{font-weight:700}
+.neg{color:var(--bad)}
+
+.bigread{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bigread .num{font-size:46px;line-height:1}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;margin-top:10px}
+.statgrid div{min-width:0}
+.statgrid .lab{font-size:13px;color:var(--muted)}
+.statgrid .num{font-size:21px;display:block}
+@media (max-width:420px){.statgrid{grid-template-columns:repeat(2,1fr)}}
+.ratio{margin-top:10px;padding:10px 12px;border-radius:6px;background:var(--sunk);font-size:15px}
+.ratio .num{font-size:20px}
+
+.tablewrap{overflow-x:auto;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:460px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.r,th.r{text-align:right}
+
+.pbrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:13px 2px}
+.pbrow:first-child{border-top:0}
+.pbrow .price{font-size:24px;text-align:right}
+
+label.f{display:block;margin-top:13px;font-size:14px;font-weight:700}
+input,select,textarea{display:block;width:100%;margin-top:5px;font:inherit;font-weight:400;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);min-height:48px}
+textarea{min-height:88px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}}
+.inlineadd{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;margin-top:8px}
+.inlineadd input{margin-top:0}
+
+.tradepick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tradepick button{border:2px solid var(--line);background:var(--surface);border-radius:6px;padding:16px 12px;text-align:left;font-weight:700;font-size:18px;display:flex;align-items:center;gap:10px;min-height:64px}
+.tradepick button i{width:14px;height:14px;border-radius:3px;background:var(--tc);flex:none}
+.tradepick button.on{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 10%,var(--surface))}
+
+.scrim{position:fixed;inset:0;background:rgba(8,16,22,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:640px;max-height:90vh;max-height:90dvh;overflow:auto;border-radius:12px 12px 0 0;padding:18px 16px calc(22px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:10px}}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.pick{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 2px}
+.pick .price{font-size:22px}
+.pick .cnt{font-size:12px;font-weight:700;color:var(--good)}
+.email{border:1px solid var(--line);border-radius:6px;padding:14px;margin-top:10px;font-size:15px;background:var(--bg)}
+.email .reviewbtn{display:inline-block;margin-top:8px;background:var(--action);color:var(--action-ink);padding:9px 14px;border-radius:6px;text-decoration:none;font-weight:700}
+
+.inv{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px 18px;margin-top:10px;position:relative}
+.inv-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:12px}
+.inv-top .num{font-size:26px}
+.inv .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;font-size:15px}
+@media (max-width:460px){.inv .cols{grid-template-columns:1fr}}
+.inv .cols .lab{font-size:13px;color:var(--muted);font-weight:600}
+.stamp{position:absolute;top:70px;right:18px;transform:rotate(-8deg);border:3px solid var(--good);color:var(--good);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;padding:2px 12px;border-radius:4px;opacity:.9}
+.toggle{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:600}
+.toggle input{width:22px;height:22px;min-height:0;margin:0;accent-color:var(--brand)}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--surface);padding:11px 16px;border-radius:6px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.nav button{font-size:12px}
+.weeknav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.weeknav .btn{min-height:42px;padding:8px 14px}
+.strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.strip button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 2px 7px;text-align:center;min-height:64px}
+.strip button .dw{display:block;font-size:12px;color:var(--muted)}
+.strip button .dn{display:block;font-size:22px;line-height:1.1}
+.strip button .dc{display:block;font-size:11px;color:var(--muted);min-height:14px}
+.strip button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.strip button.on .dw,.strip button.on .dc{color:inherit;opacity:.8}
+.strip button.today:not(.on){border-color:var(--action);border-width:2px}
+.techblock{margin-top:18px}
+.techblock-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.opengap{margin-top:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:6px;color:var(--muted);font-size:14px}
+.pill.enroute{background:color-mix(in srgb,var(--action) 25%,var(--surface));color:var(--ink)}
+.contact{display:flex;gap:10px;margin-top:14px}
+.contact .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}
+.officeline{font-size:13px;color:var(--muted);margin-top:6px}
+.private{border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line));background:color-mix(in srgb,var(--brand) 7%,var(--surface))}
+.note{padding:10px 0;border-top:1px solid var(--line)}
+.note:first-of-type{border-top:0}
+.note .by{font-size:13px;color:var(--muted);font-weight:600}
+.bubbles{display:flex;flex-direction:column;gap:8px;margin:10px 0;max-height:46vh;overflow:auto;padding:4px 2px}
+.bub{max-width:82%;padding:9px 12px;border-radius:12px;font-size:15px}
+.bub.out{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:3px}
+.bub.in{align-self:flex-start;background:var(--sunk);border-bottom-left-radius:3px}
+.bub.sys{align-self:center;background:none;color:var(--muted);font-size:13px;padding:2px}
+.bub .ts{display:block;font-size:11px;opacity:.75;margin-top:3px}
+.clockcard{text-align:center;padding:26px 16px}
+.clockcard .big{font-size:56px;line-height:1}
+.clockcard .btn{min-height:64px;font-size:20px;width:100%;max-width:360px;margin-top:16px}
+.invrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 2px}
+.invrow:first-child{border-top:0}
+.invrow .oh{font-size:26px;text-align:right;line-height:1}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--good) 14%,var(--surface));color:var(--good);margin-top:10px}
+.badge.off{background:var(--sunk);color:var(--muted)}
+.summarybox{margin-top:14px;padding:12px 14px;border-left:4px solid var(--brand);background:var(--sunk);border-radius:0 6px 6px 0;font-size:15px;white-space:pre-wrap}
+.topbtns{display:flex;gap:2px}
+
+.nav button{font-size:11px;padding-left:1px;padding-right:1px}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 14px;min-height:42px;font-weight:600}
+.seg button.on{background:var(--ink);color:var(--surface)}
+.dx{color:var(--bad);font-weight:800}
+.strip button.on .dx{color:var(--action)}
+main.wide{max-width:1400px}
+.board{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);margin-top:12px}
+.board-in{display:grid;grid-template-columns:58px repeat(var(--cols),minmax(150px,1fr));min-width:calc(58px + var(--cols) * 150px)}
+.bcorner,.bgut{position:sticky;left:0;z-index:3;background:var(--surface);border-right:1px solid var(--line)}
+.bh{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px;border-bottom:1px solid var(--line);border-left:1px solid var(--line);text-align:center;min-width:0}
+.bcorner{border-bottom:1px solid var(--line)}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--tc);color:#fff;font-weight:700;font-size:14px}
+.bn{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.bm{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.bm i.on{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block}
+.bgut{position:sticky;left:0}
+.bgut span{position:absolute;right:6px;font-size:12px;color:var(--muted);transform:translateY(-1px)}
+.bcol{position:relative;border-left:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(color-mix(in srgb,var(--line) 45%,transparent) 1px,transparent 1px);background-size:100% 56px,100% 28px;cursor:copy}
+.bcol.over{background-color:color-mix(in srgb,var(--action) 10%,var(--surface))}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:2;pointer-events:none}
+.blk{position:absolute;left:calc(var(--lane) * (100% / var(--lanes)) + 3px);width:calc(100% / var(--lanes) - 6px);display:flex;flex-direction:column;gap:1px;align-items:flex-start;text-align:left;overflow:hidden;padding:5px 7px;border:1px solid color-mix(in srgb,var(--tc) 30%,var(--line));border-left:4px solid var(--tc);border-radius:4px;background:color-mix(in srgb,var(--tc) 13%,var(--surface));font-size:12.5px;line-height:1.25;z-index:1;cursor:pointer}
+.blk strong{font-size:13.5px;overflow-wrap:anywhere}
+.blk .num{font-size:15px}
+.blk .bs{font-size:11px;font-weight:700;color:var(--muted)}
+.blk.parts{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--warn) 14%,var(--surface)) 0 8px,var(--surface) 8px 16px);border-style:dashed}
+.blk.parts .bs{color:var(--warn)}
+.blk.invoiced,.blk.paid{opacity:.62}
+.blk.progress .bs,.blk.enroute .bs{color:var(--ink)}
+.blk.conflict{outline:2px solid var(--bad);outline-offset:-1px}
+.blk.conflict .bs{color:var(--bad)}
+.blk.dragging{opacity:.4}
+.blk:focus-visible{z-index:4}
+
+.eqcard{display:grid;grid-template-columns:72px 1fr;gap:12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 2px;align-items:start}
+.eqcard:first-of-type{border-top:0}
+.eqcard img,.eqcard .eqph{width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid var(--line)}
+.eqph{display:grid;place-items:center;background:var(--sunk);color:var(--muted);font-size:11px;text-align:center}
+.eqb{display:flex;flex-direction:column;gap:1px;min-width:0;border-left:3px solid var(--tc);padding-left:10px}
+.eqphoto{display:flex;align-items:center;gap:12px;margin-top:6px}
+.eqphoto img,.eqphoto .eqph{width:96px;height:96px;border-radius:6px;object-fit:cover;border:1px solid var(--line)}
+
+.subrow{padding-left:22px;background:color-mix(in srgb,var(--sunk) 45%,transparent)}
+.pill.mem{background:color-mix(in srgb,var(--action) 28%,var(--surface));color:var(--ink)}
+.memcard{border:1px solid var(--line);border-radius:6px;padding:14px;margin-top:10px}
+.memcard:first-of-type{margin-top:4px}
+.plangrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:8px}
+.plancard{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--action);border-radius:6px;padding:14px}
+.plancard:hover{border-color:var(--muted)}
+details.loc{border-top:1px solid var(--line)}
+details.loc:first-of-type{border-top:0}
+details.loc summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;cursor:pointer;list-style:none}
+details.loc summary::-webkit-details-marker{display:none}
+details.loc summary::after{content:'+';font-weight:700;font-size:20px;color:var(--muted);margin-left:6px}
+details.loc[open] summary::after{content:'–'}
+.locbody{padding:0 2px 14px}
+.visitedit{display:grid;grid-template-columns:1.3fr .7fr 1.4fr auto;gap:6px;margin-top:8px;align-items:center}
+.visitedit input,.visitedit select{margin-top:0;min-height:42px;font-size:14px}
+@media (max-width:560px){.visitedit{grid-template-columns:1fr 1fr}.visitedit input{grid-column:1/-1}}
+
+.co img{height:34px;width:auto;max-width:120px;object-fit:contain;background:#fff;border-radius:4px;padding:2px 4px;vertical-align:middle;margin-right:10px}
+.invlogo{display:block;max-height:70px;max-width:220px;object-fit:contain;margin-bottom:6px}
+.mlogo{display:block;max-height:40px;max-width:160px;object-fit:contain;margin-bottom:4px}
+.mailbrand{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px}
+.logoprev{width:140px;height:70px;border:1px dashed var(--line);border-radius:6px;display:grid;place-items:center;background:#fff;overflow:hidden}
+.logoprev img{max-width:100%;max-height:100%;object-fit:contain}
+.paygrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.paygrid button{border:2px solid var(--line);background:var(--surface);border-radius:6px;padding:12px 10px;min-height:52px;font-weight:600;text-align:left}
+.paygrid button.on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,var(--surface))}
+.paygrid button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><div class="co" id="coName">Service Desk</div>
+<div class="topbtns">
+<button class="iconbtn" data-act="newjob" aria-label="New job"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<button class="iconbtn" data-act="settings" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div></div></header>
+<main id="app"></main>
+<nav class="nav" aria-label="Main"><div class="nav-in">
+<button data-act="go" data-go="schedule"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Schedule</button>
+<button data-act="go" data-go="customers"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M17 4a4 4 0 0 1 0 8M22 21v-1a6 6 0 0 0-3-5.2"/></svg>Customers</button>
+<button data-act="go" data-go="clock"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Clock</button>
+<button data-act="go" data-go="pricebook"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Prices</button>
+<button data-act="go" data-go="inventory"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Stock</button>
+<button data-act="go" data-go="reports"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</button>
+</div></nav>
+<div id="sheet"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const KEY='svcdesk-flatrate-v7';
+const TR={hvac:{name:'HVAC',color:'var(--hvac)'},electrical:{name:'Electrical',color:'var(--elec)'},plumbing:{name:'Plumbing',color:'var(--plumb)'},septic:{name:'Septic',color:'var(--septic)'}};
+const TK=['hvac','electrical','plumbing','septic'];
+const SITE={
+ hvac:[{k:'system',l:'System type',o:['Split AC','Heat pump','Package unit','Gas furnace','Mini-split']},{k:'brand',l:'Brand'},{k:'age',l:'Approx. age (years)',t:'number'},{k:'tonnage',l:'Tonnage',o:['1.5','2','2.5','3','3.5','4','5']},{k:'filter',l:'Filter size'},{k:'thermostat',l:'Thermostat'}],
+ electrical:[{k:'panelBrand',l:'Panel brand'},{k:'panelAmps',l:'Panel amps',o:['100','125','150','200','400']},{k:'issueLocation',l:'Where is the issue?'},{k:'permit',l:'Permit likely?',o:['No','Yes','Not sure']},{k:'gensolar',l:'Generator or solar?',o:['None','Generator','Solar','Both']}],
+ plumbing:[{k:'whType',l:'Water heater type',o:['Gas tank','Electric tank','Tankless gas','Tankless electric']},{k:'whAge',l:'Water heater age (years)',t:'number'},{k:'shutoff',l:'Main shutoff location'},{k:'pipe',l:'Pipe material',o:['Copper','PEX','CPVC','Galvanized','Unknown']},{k:'fixture',l:'Fixture involved'}],
+ septic:[{k:'tankSize',l:'Tank size (gallons)',o:['750','1000','1250','1500','2000']},{k:'tankMaterial',l:'Tank material',o:['Concrete','Poly','Fiberglass','Steel']},{k:'tankLocation',l:'Tank location'},{k:'lidDepth',l:'Lid depth (inches)',t:'number'},{k:'riser',l:'Riser installed?',o:['No','Yes']},{k:'lastPumped',l:'Last pumped',t:'date'},{k:'drainField',l:'Drain field notes'}]
+};
+const CHECK={
+ hvac:['Check thermostat operation','Inspect filter and replace if dirty','Test capacitor and contactor','Check refrigerant pressures','Rinse condenser coil','Flush condensate drain','Record supply and return temperatures'],
+ electrical:['Shut off and lock out circuit before work','Test outlets and GFCI protection','Check panel for heat, corrosion, or loose lugs','Verify breaker and wire sizing match','Label any circuits changed','Test circuit after repair with customer'],
+ plumbing:['Locate main shutoff before work','Inspect for active leaks','Test water pressure','Check water heater T&P valve','Run fixtures after repair and check for leaks','Clean up work area'],
+ septic:['Locate and expose tank lids','Record sludge and scum levels','Inspect inlet and outlet baffles','Check effluent filter','Walk drain field for pooling or odor','Record gallons pumped','Secure lids and replace cover soil']
+};
+const FOLLOW={hvac:{d:180,l:'Seasonal tune-up reminder'},electrical:{d:365,l:'Annual electrical safety check'},plumbing:{d:365,l:'Annual plumbing check and water heater flush'},septic:{d:1095,l:'Septic pump-out reminder'}};
+const EQ={
+ hvac:{types:['AC/heat unit','Condenser','Heat pump','Furnace','Air handler','Package unit','Mini-split','Wall unit','Window AC','Evaporative cooler','Exhaust fan','Gas unit heater','Evaporator coil','Thermostat'],size:'Size (tons or BTU)',sizePh:'3 ton, 80,000 BTU',extra:{k:'refrigerant',l:'Refrigerant',o:['R-410A','R-454B','R-32','R-22','Other']}},
+ electrical:{types:['Main panel','Subpanel','Meter base','Generator','Transfer switch','Solar inverter','EV charger','Surge protector'],size:'Amps or kW',sizePh:'200A, 40 spaces',extra:{k:'breakers',l:'Breaker type',o:['Plug-on','Bolt-on','Mixed','Unknown']}},
+ plumbing:{types:['Water heater','Tankless water heater','Water softener','Filtration system','Pressure regulator','Sump pump','Well pump','Recirculation pump'],size:'Capacity',sizePh:'50 gal, 199k BTU',extra:{k:'fuel',l:'Fuel or power',o:['Natural gas','Propane','Electric','N/A']}},
+ septic:{types:['Septic tank','Pump or lift station','Effluent filter','Alarm panel','Aerobic unit','Distribution box','Drain field'],size:'Capacity or size',sizePh:'1,250 gal',extra:{k:'material',l:'Material',o:['Concrete','Poly','Fiberglass','Steel','N/A']}}
+};
+const COND=['Good','Fair','Poor','Needs replacement'];
+const TERMS={due:{l:'Due on receipt',d:0},net15:{l:'Net 15',d:15},net30:{l:'Net 30',d:30},net60:{l:'Net 60',d:60}};
+const STATUS={scheduled:'Scheduled',enroute:'On the way',progress:'In progress',parts:'Waiting on parts',invoiced:'Invoiced',paid:'Paid'};
+const OPEN=['scheduled','enroute','progress','parts'];
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=(n,d=0)=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=n=>isFinite(n)?Math.round(n*100)+'%':'–';
+const r1=n=>Math.round(n*10)/10;
+function iso(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
+const today=()=>iso(new Date());
+function toDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function addDays(s,n){const x=toDate(s);x.setDate(x.getDate()+n);return iso(x)}
+function daysBetween(a,b){return Math.round((toDate(b)-toDate(a))/86400000)}
+function weekStart(s){const dow=(toDate(s).getDay()+6)%7;return addDays(s,-dow)}
+function fmtDate(s){if(!s)return'';const x=toDate(s),o={month:'short',day:'numeric'};if(x.getFullYear()!==new Date().getFullYear())o.year='numeric';return x.toLocaleDateString('en-US',o)}
+function fmtTime(t){if(!t)return'';let[h,m]=t.split(':').map(Number);const ap=h>=12?'PM':'AM';h=h%12||12;return `${h}:${String(m).padStart(2,'0')}<small>${ap}</small>`}
+const fmtTimePlain=t=>fmtTime(t).replace('<small>',' ').replace('</small>','');
+function dayLabel(d){const n=daysBetween(today(),d);if(n===0)return'Today';if(n===1)return'Tomorrow';if(n===-1)return'Yesterday';return toDate(d).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}
+function stamp(dt){dt=dt||new Date();return iso(dt)+'T'+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')}
+function parseStamp(s){const[a,b]=s.split('T'),x=toDate(a),[h,mi]=b.split(':').map(Number);x.setHours(h,mi,0,0);return x}
+const stampTime=s=>fmtTimePlain(s.split('T')[1]);
+function stampLabel(s){const d=s.split('T')[0];return(d===today()?'Today':fmtDate(d))+', '+stampTime(s)}
+const punchHours=p=>Math.max(0,((p.out?parseStamp(p.out):new Date())-parseStamp(p.in))/3600000);
+const first=n=>String(n||'').split(' ')[0];
+
+let state,view={name:'schedule'},ui={trade:'all',onlyParts:false,day:null,pbTrade:'hvac',invTrade:'all',invQ:'',period:30,sheet:null,resetArm:false,me:'t1',mode:(window.innerWidth>=760?'board':'list'),custQ:'',custF:'all'},intake=null;
+const pb=id=>state.pricebook.find(p=>p.id===id);
+const tech=id=>state.techs.find(t=>t.id===id)||{name:'Unassigned',rate:0,trade:''};
+const cust=id=>state.customers.find(c=>c.id===id)||{name:'Unknown customer',site:{}};
+const job=id=>state.jobs.find(j=>j.id===id);
+const item=id=>state.inventory.find(i=>i.id===id);
+const uid=p=>p+(state.nextId++);
+const lp=(l,p)=>l.price!=null?l.price:p.price;
+const cardUp=()=>1/(1-(+state.cardCover||0)/100);
+function calcPrice(p){return Math.round(((+p.hours||0)*state.laborRate+(+p.parts||0)*(1+state.partsMarkup/100))*cardUp())}
+function repriceAll(){state.pricebook.forEach(p=>{if(p.mode!=='custom')p.price=calcPrice(p)})}
+function avgRate(trade){const t=state.techs.filter(x=>x.trade===trade);return t.length?t.reduce((s,x)=>s+Number(x.rate),0)/t.length:40}
+
+/* payments */
+const PM={tap:'Tap to Pay on phone',reader:'Card reader',link:'Text-to-pay link',file:'Card on file',ach:'Bank transfer (ACH)',check:'Check',cash:'Cash'};
+const paidAmt=j=>((j.invoice&&j.invoice.payments)||[]).reduce((x,p)=>x+p.amount,0);
+const balance=j=>j.status==='paid'?0:Math.max(0,Math.round((nums(j).billed-paidAmt(j))*100)/100);
+function cardFee(m,a){if(m==='tap'||m==='reader')return Math.round((a*state.fees.inPct/100+state.fees.inFix+(m==='tap'?state.fees.tap:0))*100)/100;if(m==='link'||m==='file')return Math.round((a*state.fees.onPct/100+state.fees.onFix)*100)/100;if(m==='ach')return Math.min(state.fees.achCap,Math.round(a*state.fees.achPct)/100);return 0}
+function brandHead(big){return `${state.logo?`<img class="${big?'invlogo':'mlogo'}" src="${state.logo}" alt="${esc(state.company)} logo">`:''}<div class="co" style="font-size:${big?24:18}px">${esc(state.company)}</div>`}
+
+/* customers: locations, sub-accounts, memberships */
+const locOf=(c,lid)=>lid?(c.locations||[]).find(l=>l.id===lid):null;
+const kids=cid=>state.customers.filter(x=>x.parentId===cid);
+const billCust=c=>c.parentId&&c.billTo==='parent'?cust(c.parentId):c;
+function jobName(j){const c=cust(j.customerId),l=locOf(c,j.locId);return c.name+(l?', '+l.name:'')}
+function jobAddr(j){const c=cust(j.customerId),l=locOf(c,j.locId);return l?l.address:c.address}
+const planOf=id=>state.plans.find(p=>p.id===id)||{name:'Unknown plan',discount:0,visits:[],price:0,billing:'year'};
+const shortPlan=pl=>pl.name.replace(/^Alpha /,'').replace(/ Comfort [Pp]lan$/,'');
+function memFor(cid,date){date=date||today();const c=cust(cid),live=m=>m.start<=date&&date<=m.end&&!m.cancelled;
+  return state.memberships.find(m=>m.customerId===cid&&live(m))||(c.parentId?state.memberships.find(m=>m.customerId===c.parentId&&m.coverSubs&&live(m)):null)||null}
+function addMonths(s,n){const x=toDate(s);x.setMonth(x.getMonth()+n);return iso(x)}
+const HVAC_SKIP=['Thermostat','Evaporator coil','Air handler'];
+function unitsFor(m){let hvac=0,wh=0;(m.targets||[]).forEach(t=>{const c=cust(t.cid);(c.equipment||[]).filter(e=>!t.locId||e.locId===t.locId).forEach(e=>{if(e.trade==='hvac'&&!HVAC_SKIP.includes(e.type))hvac++;if(e.trade==='plumbing'&&/water heater/i.test(e.type))wh++})});return{hvac,wh}}
+function contractPrice(m){const pl=planOf(m.planId);if(m.price!=null&&m.price!=='')return +m.price;let x=pl.price;if(pl.included){const u=unitsFor(m);x+=Math.max(0,u.hvac-pl.included.hvac)*pl.addonHvac+Math.max(0,u.wh-pl.included.wh)*pl.addonWh}return x}
+const annual=m=>{const pl=planOf(m.planId);return contractPrice(m)*(pl.billing==='month'?12:1)};
+const BILL={year:'every year',month:'every month',once:'one-time payment per year'};
+function visitStatus(v){if(v.doneDate)return'done';const j=v.jobId&&job(v.jobId);if(j)return j.invoice?'done':'scheduled';return v.due<today()?'overdue':'due'}
+function genVisits(m,nid){const pl=planOf(m.planId);m.visits=[];pl.visits.forEach((v,vi)=>m.targets.forEach(t=>m.visits.push({id:nid(),vi,label:v.label,trade:v.trade,tasks:v.tasks.slice(),due:addMonths(m.start,v.mo),cid:t.cid,locId:t.locId||null,jobId:null,doneDate:null})))}
+function makeTargets(c,locIds,coverSubs){const t=[];if(c.locations&&c.locations.length&&locIds&&locIds.length)locIds.forEach(l=>t.push({cid:c.id,locId:l}));else t.push({cid:c.id,locId:null});if(coverSubs)kids(c.id).forEach(k=>t.push({cid:k.id,locId:null}));return t}
+
+/* job costing: actual hours and logged materials win over price book estimates */
+function nums(j){
+  let billed=0,est=0,std=0;
+  let elig=0,diag=0;
+  j.tasks.forEach(l=>{const p=pb(l.id);if(!p)return;const amt=(l.incl?0:lp(l,p))*l.qty;billed+=amt;if(!l.incl){elig+=amt;if(/diagnostic/i.test(p.name))diag+=amt}est+=p.parts*l.qty;std+=p.hours*l.qty});
+  const mem=memFor(j.customerId,j.date),pl=mem&&planOf(mem.planId);let disc=0,freeD=0;
+  if(pl){freeD=pl.freeDiag?diag:0;disc=Math.round((freeD+(elig-freeD)*pl.discount/100)*100)/100}
+  const gross=billed;billed=gross-disc;
+  const logged=j.materials.reduce((s,x)=>s+(+x.cost||0)*(+x.qty||1),0);
+  const partsActual=j.materials.length>0,parts=partsActual?logged:est;
+  const hours=j.hours==null?std:Number(j.hours);
+  const labor=hours*Number(tech(j.techId).rate||0);
+  return{billed,gross,disc,freeD,plan:pl?shortPlan(pl):'',pctOff:pl?pl.discount:0,parts,partsActual,est,labor,hours,std,gp:billed-parts-labor};
+}
+function costBar(b,l,p){const tot=Math.max(b,l+p)||1,g=Math.max(b-l-p,0);return `<div class="split" role="img" aria-label="Labor ${money(l)}, parts ${money(p)}, gross profit ${money(b-l-p)}"><span class="l" style="width:${l/tot*100}%"></span><span class="p" style="width:${p/tot*100}%"></span><span class="g" style="width:${g/tot*100}%"></span></div>`}
+function legend(b,l,p,ln,pn){const g=b-l-p;return `<div class="legend">
+<span class="k">Billed to customer</span><span class="v num">${money(b)}</span>
+<span class="k"><i style="background:var(--labor)"></i>Labor${ln?` <span class="muted small">${ln}</span>`:''}</span><span class="v num">${money(l)}</span>
+<span class="k"><i style="background:var(--parts)"></i>Parts and materials${pn?` <span class="muted small">${pn}</span>`:''}</span><span class="v num">${money(p)}</span>
+<span class="k gp"><i style="background:var(--profit)"></i>Gross profit</span><span class="v num gp ${g<0?'neg':''}">${money(g)} <span class="small">${b?pct(g/b):''}</span></span></div>`}
+
+/* ---------- seed data ---------- */
+function seed(){
+  const t=today();
+  const techs=[{id:'t1',name:'Marcus Reed',trade:'hvac',rate:42},{id:'t5',name:'Jess Walker',trade:'hvac',rate:38},{id:'t2',name:'Dana Kim',trade:'electrical',rate:46},{id:'t3',name:'Luis Ortega',trade:'plumbing',rate:41},{id:'t4',name:'Ray Collins',trade:'septic',rate:37}];
+  const P=(id,trade,name,price,parts,hours,includes)=>({id,trade,name,price,parts,hours,includes});
+  const pricebook=[
+    P('h1','hvac','Diagnostic service call',89,0,.5,'Full system diagnosis'),P('h7','hvac','Heating tune-up',129,6,1,'Burner or heat strip check, safety controls, filter'),P('h8','hvac','Commercial unit tune-up and filter change',215,25,1.25,'Per unit: coils, belts, electrical, drains, new filter'),P('h2','hvac','Replace run capacitor',245,18,.5,'Dual run capacitor up to 60/5 MFD'),P('h3','hvac','Replace contactor',295,24,.75,'Single or double pole contactor'),P('h4','hvac','AC tune-up',129,6,1,'Coil rinse, electrical check, drain flush'),P('h5','hvac','Replace blower motor',895,265,2,'OEM-equivalent motor and capacitor'),P('h6','hvac','Clear condensate drain',165,4,.75,'Vacuum clear and drain tablets'),
+    P('e1','electrical','Diagnostic service call',89,0,.5,'Troubleshoot and locate fault'),P('e2','electrical','Replace GFCI outlet',185,22,.5,'20A tamper-resistant GFCI'),P('e3','electrical','Replace single-pole breaker',225,16,.75,'Up to 30A, matched to panel brand'),P('e4','electrical','Install ceiling fan on existing box',265,12,1.25,'Fan-rated box check and hardware'),P('e5','electrical','Panel safety inspection',149,0,1,'Torque check, thermal scan, written report'),P('e6','electrical','Whole-home surge protector',495,120,1,'Type 2 surge device and breaker'),
+    P('p1','plumbing','Diagnostic service call',89,0,.5,'Locate leak or fault'),P('p7','plumbing','Plumbing safety inspection',149,0,1,'Fixtures, supply lines, shutoffs, drains, written report'),P('p2','plumbing','Toilet rebuild',285,35,1,'Fill valve, flapper, supply line'),P('p3','plumbing','Clear kitchen drain',225,4,1,'Cable up to 50 ft'),P('p4','plumbing','Water heater flush',159,5,1,'Flush, anode check, T&P test'),P('p5','plumbing','Replace faucet cartridge',245,48,1,'Brand cartridge, O-rings, grease'),P('p6','plumbing','Replace 50 gal gas water heater',2450,960,4,'Heater, flex lines, venting, haul-away'),
+    P('s1','septic','Pump tank up to 1,000 gal',495,85,1.5,'Pump-out and disposal fees'),P('s2','septic','Pump tank 1,001 to 1,500 gal',645,125,2,'Pump-out and disposal fees'),P('s3','septic','Septic inspection',325,0,1.5,'Levels, baffles, drain field, written report'),P('s4','septic','Clean effluent filter',145,0,.5,'Remove, clean, reinstall'),P('s5','septic','Install 24 in. riser and lid',695,180,3,'Riser, lid, sealant'),P('s6','septic','Jet sewer line to tank',395,10,1.5,'Hydro-jet up to 100 ft')
+  ];
+  pricebook.forEach(p=>{p.mode='auto';p.price=Math.round((p.hours*165+p.parts*1.5)/0.97)});
+  const I=(id,trade,name,sku,cost,onHand,reorder,loc)=>({id,trade,name,sku,cost,onHand,reorder,loc});
+  const inventory=[
+    I('i1','hvac','Dual run capacitor 45/5 MFD','CAP-455',18,6,4,'Warehouse A1'),I('i2','hvac','Contactor 2-pole 30A','CON-230',24,3,3,'Warehouse A1'),I('i3','hvac','Pleated filter 20x25x1','FLT-20251',6,24,12,'Warehouse A3'),I('i4','hvac','Condensate drain tablets','CDT-01',1.5,40,20,'Truck 1'),I('i5','hvac','Blower motor 1/2 HP','BLM-050',265,1,1,'Warehouse A2'),
+    I('i6','electrical','GFCI outlet 20A tamper-resistant','GFCI-20',22,14,10,'Warehouse B1'),I('i7','electrical','Breaker 20A single pole','QO120',16,4,6,'Warehouse B1'),I('i8','electrical','Whole-home surge protector','SPD-T2',120,2,2,'Warehouse B2'),I('i9','electrical','Wire nuts, assorted bag','WN-AST',8,9,5,'Truck 3'),
+    I('i10','plumbing','Moen 1225 cartridge','MOEN-1225',48,0,2,'Warehouse C1'),I('i11','plumbing','Toilet fill valve','FV-400',14,7,5,'Warehouse C1'),I('i12','plumbing','Toilet flapper 3 in.','FLP-3',6,10,6,'Warehouse C1'),I('i13','plumbing','Braided supply line 3/8 x 12','SUP-12',7,18,10,'Truck 4'),I('i14','plumbing','Gas flex connector 24 in.','GFC-24',22,4,3,'Warehouse C2'),
+    I('i15','septic','Effluent filter 4 in.','EFF-4',65,3,2,'Yard shed'),I('i16','septic','Riser section 24 in.','RSR-24',120,2,2,'Yard shed'),I('i17','septic','Riser lid 24 in.','LID-24',60,2,2,'Yard shed'),I('i18','septic','Riser sealant tube','SEAL-01',12,8,4,'Yard shed')
+  ];
+  const C=(id,name,type,phone,email,address,billing,terms,access,source,site)=>({id,name,type,phone,email,address,billing,terms,access,source,site});
+  const customers=[
+    C('c1','Maria Hernandez','Residential','(555) 010-0142','maria.h@example.com','4127 Palo Verde Dr','','due','Side gate code 4411. Friendly dog in yard.','Google',{hvac:{system:'Split AC',brand:'Trane',age:'11',tonnage:'3',filter:'20x25x1',thermostat:'Honeywell T6'}}),
+    C('c2','Desert Ridge Dental','Commercial','(555) 010-0310','ap@desertridgedental.example','910 Commerce Pkwy, Suite 120','Attn: Accounts Payable, 910 Commerce Pkwy','net30','Check in at front desk. Panel is in the back hallway closet.','Referral',{electrical:{panelBrand:'Square D',panelAmps:'200',issueLocation:'Staff breakroom',permit:'No',gensolar:'None'}}),
+    C('c3','Priya Patel','Residential','(555) 010-0877','priya.patel@example.com','2250 Juniper Ln','','due','Park in the driveway.','Repeat customer',{plumbing:{whType:'Gas tank',whAge:'3',shutoff:'Front hose bib, left of garage',pipe:'PEX',fixture:'Kitchen faucet'}}),
+    C('c4','Tom Whitfield','Residential','(555) 010-0655','twhitfield@example.com','23810 Old Ranch Rd','','due','Rural lot. Call on arrival, gate is chained.','Google',{septic:{tankSize:'1250',tankMaterial:'Concrete',tankLocation:'NE corner of house, 25 ft out',lidDepth:'18',riser:'No',lastPumped:addDays(t,-1400),drainField:'East side, slight downhill slope'}}),
+    C('c5','Sunbelt Property Management','Commercial','(555) 010-0990','maintenance@sunbeltpm.example','1400 Industrial Way','PO Box 2201','net30','Roof ladder is in the maintenance room. Ask for Greg.','Referral',{hvac:{system:'Package unit',brand:'Carrier',age:'8',tonnage:'5',filter:'20x25x2',thermostat:'Ecobee'}}),
+    C('c6','Linda Ortiz','Residential','(555) 010-0233','lortiz@example.com','781 Cottonwood Ct','','due','','Facebook',{septic:{tankSize:'1500',tankMaterial:'Poly',tankLocation:'Backyard, under the pavers by the shed',lidDepth:'10',riser:'Yes',lastPumped:addDays(t,-8),drainField:'Behind shed'}}),
+    C('c7','Kevin Nguyen','Residential','(555) 010-0418','kevin.n@example.com','3301 Saguaro Blvd','','due','','Google',{hvac:{system:'Heat pump',brand:'Goodman',age:'6',tonnage:'2.5',filter:'16x25x1',thermostat:'Nest'}}),
+    C('c8','Aaron Brooks','Residential','(555) 010-0561','abrooks@example.com','5520 Mesquite Trl','','due','','Yard sign',{electrical:{panelBrand:'Eaton',panelAmps:'150',issueLocation:'Living room and patio',permit:'No',gensolar:'Solar'}}),
+    C('c9','Canyon View HOA','Commercial','(555) 010-0702','board@canyonviewhoa.example','100 Canyon View Dr (clubhouse)','Canyon View HOA, c/o Summit Management','net30','Clubhouse code 2020#','Referral',{plumbing:{whType:'Electric tank',whAge:'9',shutoff:'Pump room behind pool',pipe:'Copper',fixture:'Clubhouse kitchen'}}),
+    C('c10','Beth Maddox','Residential','(555) 010-0149','beth.maddox@example.com','46 Dry Creek Rd','','due','Long dirt driveway, trucks OK.','Google',{septic:{tankSize:'1000',tankMaterial:'Concrete',tankLocation:'Front yard, left of walkway',lidDepth:'24',riser:'Yes',lastPumped:addDays(t,-4),drainField:'Front yard toward road'}})
+  ];
+  const E=(cid,trade,type,brand,model,serial,year,size,loc,extra,cond,notes,warranty)=>{const c=customers.find(x=>x.id===cid);(c.equipment=c.equipment||[]).push({id:'e'+cid+c.equipment.length,trade,type,brand,model,serial,year,size,loc,extra:extra||'',condition:cond||'Good',notes:notes||'',warranty:warranty||'',photo:'',by:'Marcus Reed',at:addDays(t,-12)})};
+  /* City of Benson: one contract, many buildings */
+  const BL=[['Library','Library, 300 Library Way',[['AC/heat unit',4]]],['Council Chambers','Council Chambers, 120 Civic Plaza',[['Mini-split',4]]],['Visitor Center','Visitor Center, 249 Depot Rd',[['AC/heat unit',2]]],
+    ['Golf Course','Golf Course clubhouse, 900 Fairway Dr',[['AC/heat unit',2],['AC/heat unit',1,'Large heating and cooling unit'],['Evaporative cooler',1],['Exhaust fan',3]]],['Public Works Yard Shop','Public Works Yard, 55 Yard Rd',[['Mini-split',1],['Window AC',1]]],
+    ["Street's Office Building",'Streets Office, 57 Yard Rd',[['AC/heat unit',1]]],['Community Center','Community Center, 705 Park Ave',[['AC/heat unit',2,'Small unit'],['AC/heat unit',2,'Large unit'],['Exhaust fan',2]]],
+    ['Police Department','Police Department, 130 Civic Plaza',[['AC/heat unit',1],['Mini-split',1,'AC only']]],['Fire Department','Fire Department, 140 Civic Plaza',[['AC/heat unit',1],['Exhaust fan',3]]],
+    ['City Hall (new)','City Hall, 120 W 6th St',[['Wall unit',5,'AC and heat'],['Mini-split',1,'AC only']]],['Parks Office','Parks Office, 710 Park Ave',[['Mini-split',2,'AC and heat']]],
+    ['Shelter','Animal Shelter, 88 Shelter Ln',[['Mini-split',3,'Single zone'],['Mini-split',1,'Multi-zone']]],['Wastewater','Wastewater Plant, 1 Treatment Plant Rd',[['AC/heat unit',1],['Mini-split',1,'AC only'],['Gas unit heater',1,'Shop']]]];
+  const benson={id:'cb',name:'City of Benson',type:'Commercial',phone:'(555) 010-0500',email:'facilities@cityofbenson.example',address:'City Hall, 120 W 6th St',billing:'City of Benson, Accounts Payable, PO Box 2223',terms:'net30',access:'Check in with facilities. Building keys are at the City Hall front desk.',source:'Referral',site:{},locations:[],equipment:[]};
+  BL.forEach(([nm,addr,eqs],li)=>{const lid='L'+(li+1);benson.locations.push({id:lid,name:nm,address:addr,access:''});eqs.forEach(([type,cnt,note])=>{for(let q=0;q<cnt;q++)benson.equipment.push({id:'eb'+lid+'_'+benson.equipment.length,trade:'hvac',type,brand:'',model:'',serial:'',year:'',size:'',loc:cnt>1?type+' '+(q+1):'',extra:'',condition:'',notes:note||'',warranty:'',photo:'',locId:lid,by:'Contract setup',at:addDays(t,-120)})})});
+  customers.push(benson);
+  /* Sunbelt Property Management: tenants billed to the property manager */
+  const SUB=(id,name,phone,email,address,access)=>({id,name,parentId:'c5',billTo:'parent',unit:'Tenant',type:'Residential',phone,email,address,billing:'',terms:'net30',access,source:'Sunbelt tenant',site:{}});
+  customers.push(SUB('s1','Jordan Miles','(555) 010-0811','jordan.m@example.com','818 Palo Brea Ln','Tenant works from home. Text before arriving.'),SUB('s2','Alicia Romero','(555) 010-0812','aromero@example.com','2291 Canyon Wren Dr','Two dogs, keep side gate closed.'),
+    SUB('s3','Trevor Hale','(555) 010-0813','thale@example.com','77 Desert Willow Ct',''),SUB('s4','Ivy Chen','(555) 010-0814','ivy.chen@example.com','1509 Quail Run','Lockbox on front door, code from Sunbelt.'));
+  E('s1','hvac','Condenser','Goodman','GSX140361','2104233817','2021','3 ton','Back yard','R-410A','Good');E('s1','hvac','Air handler','Goodman','AVPTC37C14','2104251190','2021','3 ton','Garage','R-410A','Good');E('s1','plumbing','Water heater','A.O. Smith','GCR-50','1840M001234','2018','50 gal','Garage','Natural gas','Fair');
+  E('s2','hvac','Heat pump','Rheem','RP1436AJ1NA','W101712345','2017','3 ton','Side yard','R-410A','Fair');E('s2','plumbing','Water heater','Bradford White','RG250T6N','KH12345678','2019','50 gal','Closet','Natural gas','Good');
+  E('s3','hvac','Package unit','Carrier','50ZH030','3015G20145','2015','2.5 ton','Roof','R-410A','Poor','Compressor pulling high amps. Recommend replacement quote.');E('s3','plumbing','Water heater','Rheem','XE40M06','Q241101111','2011','40 gal','Garage','Electric','Needs replacement','Tank rusting at base.');
+  E('s4','hvac','Condenser','Lennox','ML14XC1-036','5820K12345','2020','3 ton','Back yard','R-410A','Good');E('s4','hvac','Furnace','Lennox','ML180UH070','5920K54321','2020','70k BTU','Attic','Natural gas','Good');E('s4','plumbing','Water heater','Rheem','XG40T06','Q362002222','2020','40 gal','Garage','Natural gas','Good');
+  E('c1','hvac','Condenser','Trane','4TTR4036L1000A','21163K9TF','2021','3 ton','West side yard','R-410A','Good','Replaced under warranty in 2021.','2031-06-01');
+  E('c1','hvac','Air handler','Trane','TEM4A0C36S31SA','14082TKR9','2014','3 ton','Hall closet','R-410A','Fair','Original to the house. Blower motor replaced last visit.');
+  E('c5','hvac','Package unit','Carrier','48FCEM06A2A6','2618C44721','2018','5 ton, RTU-1','Roof, north end','R-410A','Good');
+  E('c5','hvac','Package unit','Carrier','48FCEM06A2A6','2618C44790','2018','5 ton, RTU-2','Roof, south end','R-410A','Fair','Economizer actuator sticking.');
+  E('c3','plumbing','Water heater','Rheem','XG50T06EC36U1','Q392301234','2023','50 gal, 36k BTU','Garage','Natural gas','Good','','2029-03-15');
+  E('c4','septic','Septic tank','Unknown','','','1998','1,250 gal','NE corner of house, 25 ft out','Concrete','Fair','Two lids, 18 in. down. No riser.');
+  let n=1041;const jobs=[],followups=[];
+  const norm=a=>a.map(x=>{const o=typeof x==='string'?{id:x,qty:1}:{id:x[0],qty:x[1]};o.price=pricebook.find(q=>q.id===o.id).price;return o});
+  const blank=trade=>({hours:null,materials:[],checklist:CHECK[trade].map(()=>false),partsNeeded:'',invoice:null,summary:'',recs:'',notes:[],locNote:'',time:'09:00',dur:3});
+  const H=(cid,trade,tid,ago,tasks,hours,status,mats,summary)=>{const d=addDays(t,-ago),c=customers.find(x=>x.id===cid),num=n++,tk=norm(tasks),names=tk.map(x=>pricebook.find(p=>p.id===x.id).name);
+    const j=Object.assign(blank(trade),{id:'j'+num,num:'J-'+num,customerId:cid,trade,techId:tid,date:d,status,desc:names[0],tasks:tk,hours,materials:mats||[],checklist:CHECK[trade].map(()=>true),
+      summary:summary||`Completed: ${names.join(', ')}. Tested everything before leaving and the system is operating normally.`,
+      invoice:{num:'INV-'+num,date:d,terms:c.terms,showMaterials:true,paidDate:status==='paid'?addDays(d,c.terms==='due'?0:12):null,qbo:true,emailed:true}});
+    jobs.push(j);followups.push({id:'f'+num,customerId:cid,trade,jobId:j.id,date:addDays(d,FOLLOW[trade].d),label:FOLLOW[trade].l});};
+  H('c7','hvac','t1',3,['h1','h2'],1.2,'paid',[{itemId:'i1',name:'Dual run capacitor 45/5 MFD',cost:18,qty:1}],'Found a failed run capacitor causing the outdoor fan to stall. Replaced the capacitor and confirmed a 19 degree temperature split. System is cooling normally.');
+  H('c5','hvac','t5',5,[['h4',3]],4.5,'invoiced',[{itemId:'i3',name:'Pleated filter 20x25x1',cost:6,qty:3},{itemId:'i4',name:'Condensate drain tablets',cost:1.5,qty:3}]);
+  H('c1','hvac','t1',12,['h5'],2.5,'paid');
+  H('c7','hvac','t5',16,['h3','h6'],2.4,'paid');
+  H('c8','electrical','t2',2,[['e2',3],'e3'],2.5,'paid');
+  H('c2','electrical','t2',40,['e6','e5'],2,'invoiced');
+  H('c8','electrical','t2',20,[['e4',2]],2.8,'paid');
+  H('c9','plumbing','t3',9,[['p3',2],'p1'],3,'invoiced');
+  H('c3','plumbing','t3',14,['p6'],5.5,'paid',[{name:'50 gal gas water heater',cost:880,qty:1},{itemId:'i14',name:'Gas flex connector 24 in.',cost:22,qty:1},{name:'Vent connector kit',cost:48,qty:1}]);
+  H('c3','plumbing','t3',25,['p2'],1.5,'paid');
+  H('c10','septic','t4',4,['s1','s5'],5,'paid');
+  H('c6','septic','t4',8,['s2','s4'],2.5,'paid');
+  H('c10','septic','t4',22,['s3'],1.5,'paid');
+  /* a month of routine history so reports look like a real shop */
+  const extraNames=['Carla Jensen','Mike Alvarez','Denise Howell','Greg Tanaka','Rosa Delgado','Sam Whitaker','Nina Ford','Victor Lam','Julie Sorensen','Omar Haddad','Tessa Monroe','Paul Riggins','Hannah Cole','Ruben Soto','Ellen Park','Dave McCoy'];
+  const streets=['Ocotillo Rd','Cholla St','Pinon Way','Agave Ct','Yucca Ln','Ironwood Dr','Mesa View Rd','Sunrise Blvd'];
+  extraNames.forEach((nm,i)=>customers.push(C('cx'+i,nm,'Residential','(555) 010-'+(2000+i*37),nm.toLowerCase().replace(' ','.')+'@example.com',(1100+i*213)+' '+streets[i%8],'','due','','Google',{})));
+  let sr=7;const rnd=()=>{sr=(sr*9301+49297)%233280;return sr/233280};
+  const byTrade={hvac:['h2','h3','h4','h5','h6','h1'],electrical:['e2','e3','e4','e5','e6','e1'],plumbing:['p2','p3','p4','p5','p6','p1'],septic:['s1','s2','s3','s4','s5','s6']};
+  for(let a=30;a>=1;a--){const d=addDays(t,-a),dow=toDate(d).getDay();if(dow===0||dow===6)continue;
+    techs.forEach(tc=>{const count=tc.id==='t5'?1+(rnd()<.4?1:0):2+(rnd()<.35?1:0);
+      for(let k=0;k<count;k++){const list=byTrade[tc.trade],a1=list[Math.floor(rnd()*list.length)],tasks=[a1];
+        if(rnd()<.35){const a2=list[Math.floor(rnd()*list.length)];if(a2!==a1)tasks.push(a2)}
+        const std=tasks.reduce((s2,id)=>s2+pricebook.find(p=>p.id===id).hours,0),hrs=Math.round(std*(0.9+rnd()*(tc.id==='t5'?0.8:0.4))*4)/4;
+        H('cx'+Math.floor(rnd()*extraNames.length),tc.trade,tc.id,a,tasks,hrs,a>3||rnd()<.6?'paid':'invoiced');}})}
+  const O=(cid,trade,tid,dayOff,time,status,desc,locNote,tasks,extra)=>{const num=n++;jobs.push(Object.assign(blank(trade),{id:'j'+num,num:'J-'+num,customerId:cid,trade,techId:tid,date:addDays(t,dayOff),time,status,desc,locNote,tasks:norm(tasks||[])},extra||{}))};
+  const note=(by,text,ago)=>({by,text,at:stamp(new Date(Date.now()-(ago||1)*3600000))});
+  O('c1','hvac','t1',0,'08:00','scheduled','AC running but blowing warm air','Condenser on west side of house, through the side gate',[],{notes:[note('Sarah (office)','Unit was replaced under warranty in 2021 per the customer. Ask for the paperwork before quoting any major repair. She prefers texts over calls.',20)]});
+  O('c2','electrical','t2',0,'10:30','progress','Breakroom outlets dead, GFCI will not reset','Breakroom, counter outlets by the sink',['e1',['e2',2]],{dur:3,checklist:[true,true,false,false,false,false],notes:[note('Sarah (office)','Commercial account on Net 30. Office manager Janet has to sign the work order before you leave.',26)]});
+  O('c4','septic','t4',0,'13:00','scheduled','Slow drains, due for pump-out','Tank lids 25 ft off NE corner of house, marked with a white PVC stake',[],{notes:[note('Sarah (office)','No riser on this tank and lids are 18 in. down. Bring the probe and shovels. Offer a riser install, he asked about it on the phone.',5)]});
+  O('cx3','hvac','t1',0,'12:00','scheduled','Thermostat blank, no cooling','Hallway thermostat, condenser in back yard',[],{dur:2});
+  O('cx5','hvac','t5',0,'08:00','scheduled','Upstairs not cooling','Attic air handler, access in garage');
+  O('cx7','hvac','t5',0,'12:30','scheduled','AC tune-up','Side yard',[],{dur:2});
+  O('cx9','electrical','t2',0,'12:00','scheduled','Half the kitchen outlets out','Kitchen, panel in garage',[],{dur:2});
+  O('cx11','plumbing','t3',0,'08:00','scheduled','Toilet running nonstop','Hall bathroom',[],{dur:2});
+  O('cx12','plumbing','t3',0,'11:00','scheduled','Water heater making popping noise','Garage',[],{dur:2});
+  O('cx14','plumbing','t3',0,'14:00','scheduled','Slow kitchen drain','Kitchen sink');
+  O('cx1','septic','t4',0,'08:00','scheduled','Routine pump-out','Front yard, riser by driveway');
+  O('cx2','electrical','',0,'15:00','scheduled','Ceiling fan install, customer supplied fan','Living room',[],{dur:2});
+  O('cx6','plumbing','',1,'13:00','scheduled','Estimate: repipe galvanized lines','Whole house',[],{dur:2});
+  O('c3','plumbing','t3',1,'09:00','parts','Kitchen faucet dripping, cartridge worn','Kitchen sink',['p5'],{partsNeeded:'Moen 1225 cartridge (qty 1)'});
+  O('c5','hvac','t5',1,'11:00','scheduled','Quarterly tune-up, 2 rooftop units','Roof, units RTU-1 and RTU-2');
+  O('c8','electrical','t2',2,'08:30','scheduled','Add GFCI outlet on back patio','Back patio, left of slider door');
+  O('c10','septic','t4',3,'10:00','scheduled','Effluent filter alarm going off','Front yard riser, left of walkway');
+  O('c9','plumbing','t3',3,'13:00','scheduled','Clubhouse water heater leaking at base','Pump room behind the pool');
+  O('c7','hvac','t1',6,'09:00','scheduled','Heat pump tune-up before winter','Side yard, north wall');
+  O('c6','septic','t4',21,'09:00','scheduled','Follow-up inspection after pump-out','Backyard, under the pavers by the shed');
+  /* time clock history: weekdays for the last 5 weeks */
+  const punches=[];let pid=1;
+  for(let a=35;a>=1;a--){const d=addDays(t,-a),dow=toDate(d).getDay();if(dow===0||dow===6)continue;
+    techs.forEach((tc,k)=>{const inM=(a*7+k*13)%22,outM=(a*11+k*17)%55;punches.push({id:'p'+(pid++),techId:tc.id,in:d+'T07:'+String(inM).padStart(2,'0'),out:d+'T'+(outM>=30?'16:'+String(outM-30).padStart(2,'0'):'15:'+String(outM+30).padStart(2,'0'))})})}
+  ['t1','t2','t4'].forEach((id,k)=>punches.push({id:'p'+(pid++),techId:id,in:t+'T07:0'+(k*3),out:null}));
+  const messages=[
+    {customerId:'c1',dir:'out',text:'Hi Maria, this is Your Company confirming your AC appointment today between 8 and 10 AM with Marcus. Reply here with any questions.',at:stamp(new Date(Date.now()-18*3600000)),by:'Sarah (office)'},
+    {customerId:'c1',dir:'in',text:'Thank you! Gate code is 4411, the dog is friendly.',at:stamp(new Date(Date.now()-17*3600000))}
+  ];
+  /* membership plans and agreements */
+  const plans=[
+    {id:'pl1',name:'Alpha Silver Comfort Plan',type:'residential',price:189,billing:'year',discount:10,freeDiag:false,desc:'1 annual HVAC tune-up, priority scheduling, and savings on repairs. Protect your comfort system and catch issues early with our essential home care plan.',visits:[{mo:0,trade:'hvac',label:'Annual HVAC tune-up',tasks:['h4']}]},
+    {id:'pl2',name:'Alpha Gold Comfort Plan',type:'residential',price:299,billing:'year',discount:15,freeDiag:false,desc:'Includes 2 seasonal HVAC tune-ups (heating and cooling), plumbing safety inspection, and electrical panel check each year. Plus 15% off repairs and priority scheduling.',visits:[{mo:0,trade:'hvac',label:'Cooling tune-up',tasks:['h4']},{mo:2,trade:'plumbing',label:'Plumbing safety inspection',tasks:['p7']},{mo:4,trade:'electrical',label:'Electrical panel check',tasks:['e5']},{mo:6,trade:'hvac',label:'Heating tune-up',tasks:['h7']}]},
+    {id:'pl3',name:'Alpha Platinum Comfort Plan',type:'residential',price:499,billing:'year',discount:20,freeDiag:true,desc:'Total home coverage including 2 HVAC tune-ups, water heater flush, full plumbing and electrical safety inspections, free diagnostics, no after-hours fees, VIP scheduling, and 20% off repairs.',visits:[{mo:0,trade:'hvac',label:'Cooling tune-up',tasks:['h4']},{mo:2,trade:'plumbing',label:'Water heater flush and plumbing inspection',tasks:['p4','p7']},{mo:4,trade:'electrical',label:'Electrical safety inspection',tasks:['e5']},{mo:6,trade:'hvac',label:'Heating tune-up',tasks:['h7']}]},
+    {id:'pl4',name:'Commercial Comfort Plan',type:'commercial',price:2400,billing:'once',discount:15,freeDiag:false,included:{hvac:5,wh:5},addonHvac:150,addonWh:150,desc:'HVAC: 2 commercial tune-ups per year with filter change. Electrical: annual safety inspection with thermal imaging of the main panel. Plumbing: annual inspection and water heater flush. 15% off labor. Perks: priority service, 10% off backflow testing, $100 credit on power washing.',visits:[{mo:0,trade:'hvac',label:'Spring tune-up, filter change, electrical safety inspection',tasks:['h8','e5']},{mo:6,trade:'hvac',label:'Fall tune-up, filter change, plumbing inspection, water heater flush',tasks:['h8','p7','p4']}]},
+    {id:'pl5',name:'City of Benson contract',type:'commercial',price:0,billing:'month',discount:15,freeDiag:false,desc:'2 seasonal HVAC tune-ups (heating and cooling) at every city building, with filter changes at each tune-up. Plus 15% off repairs and priority scheduling.',visits:[{mo:0,trade:'hvac',label:'Cooling season tune-up and filter change',tasks:['h8']},{mo:6,trade:'hvac',label:'Heating season tune-up and filter change',tasks:['h8']}]}
+  ];
+  let vid=1;const nid=()=>'v'+(vid++);const memberships=[];const tmpState={plans};
+  const MEM=(id,cid,plan,ago,opt)=>{opt=opt||{};const c=customers.find(x=>x.id===cid),m={id,customerId:cid,planId:plan,start:addDays(t,-ago),end:addDays(addMonths(addDays(t,-ago),12),-1),autoRenew:true,coverSubs:!!opt.subs,price:opt.price,cancelled:false};
+    m.targets=[];if(c.locations&&c.locations.length)c.locations.forEach(l=>m.targets.push({cid,locId:l.id}));else m.targets.push({cid,locId:null});if(opt.subs)customers.filter(x=>x.parentId===cid).forEach(k=>m.targets.push({cid:k.id,locId:null}));
+    const pl=plans.find(p=>p.id===plan);m.visits=[];pl.visits.forEach((v,vi)=>m.targets.forEach(tg=>m.visits.push({id:nid(),vi,label:v.label,trade:v.trade,tasks:v.tasks.slice(),due:addMonths(m.start,v.mo),cid:tg.cid,locId:tg.locId,jobId:null,doneDate:null})));
+    m.visits.forEach(v=>{if(v.due<addDays(t,-7)&&!(opt.skip||[]).includes(v.locId||v.cid))v.doneDate=addDays(v.due,5)});memberships.push(m)};
+  MEM('m1','c1','pl2',150);MEM('m2','c7','pl1',300);MEM('m3','c3','pl3',20);MEM('m4','c5','pl4',100,{subs:true});MEM('m5','cb','pl5',140,{skip:['L12','L13']});
+  ['cx0','cx4','cx8','cx10','cx13','cx15'].forEach((cid,i)=>MEM('mx'+i,cid,['pl2','pl1','pl3','pl2','pl1','pl2'][i],40+i*45));
+  /* space completed jobs through each tech's day */
+  const slots={};jobs.filter(j=>j.invoice).sort((a,b)=>a.num.localeCompare(b.num)).forEach(j=>{const k=j.techId+j.date,i=slots[k]=(slots[k]||0)+1;j.time=['08:00','11:00','14:00','16:30'][Math.min(i-1,3)];j.dur=i>3?1.5:2.5});
+    const PMS=['tap','tap','reader','link','file','check','cash'];let pr=3;
+  jobs.filter(j=>j.status==='paid').forEach(j=>{const c=customers.find(x=>x.id===j.customerId);pr=(pr*7+3)%97;const m=c&&c.type==='Commercial'?(pr%2?'ach':'check'):PMS[pr%PMS.length];j.invoice.payments=[{id:'pay'+j.num,date:j.invoice.paidDate,method:m,amount:null,ref:m==='check'?String(1000+pr*13):'',fee:null}]});
+  ['c1','c7','c3','cx0','cx4'].forEach((id,i)=>{const c=customers.find(x=>x.id===id);if(c)c.card={brand:['Visa','Mastercard','Visa','Amex','Visa'][i],last4:['4242','5454','1881','0005','7719'][i],exp:'08/28'}});
+  return{company:'Alpha Home Services',logo:'',brandColor:'#1F4A63',companyAddress:'',license:'',website:'',fees:{inPct:2.7,inFix:.05,tap:.10,onPct:2.9,onFix:.30,achPct:.8,achCap:5},officePhone:'(555) 010-0100',csr:'Sarah (office)',reviewLink:'https://g.page/r/your-review-link/review',targetMargin:60,laborRate:165,partsMarkup:50,cardCover:3,qbo:{connected:true},ghl:{connected:true},
+    techs,pricebook,inventory,customers,jobs,followups,punches,messages,plans,memberships,nextId:100,nextNum:n};
+}
+function load(){try{const s=localStorage.getItem(KEY);if(s){state=JSON.parse(s);return}}catch(e){}state=seed();state.jobs.forEach(j=>{(j.invoice&&j.invoice.payments||[]).forEach(p=>{if(p.amount==null){p.amount=nums(j).billed;p.fee=cardFee(p.method,p.amount)}})})}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){if(e&&e.name==='QuotaExceededError')toast('This device is out of storage for photos. In the real app photos are stored on the server.')}}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2600)}
+function openPunch(tid){return state.punches.find(p=>p.techId===tid&&!p.out)}
+
+/* ---------- schedule ---------- */
+function jobRow(j){const c=cust(j.customerId);return `<button class="job" style="--tc:${TR[j.trade].color}" data-act="open-job" data-id="${j.id}">
+<span class="stripe"></span><span class="time num">${fmtTime(j.time)}</span>
+<span class="body"><span class="name">${esc(jobName(j))}</span><span class="desc">${esc(j.desc)}</span>
+<span class="meta"><span class="tag">${TR[j.trade].name}</span><span class="pill ${j.status}">${STATUS[j.status]}</span>${j.notes.length?`<span>Note from office</span>`:''}</span></span></button>`}
+
+const BS=7,BE=19,PX=56;
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
+const fromMin=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const jEnd=j=>toMin(j.time)+Math.round((j.dur||3)*60);
+function conflicts(techId,date,time,dur,exId){if(!techId)return[];const st=toMin(time),en=st+Math.round(dur*60);return state.jobs.filter(j=>j.id!==exId&&j.techId===techId&&j.date===date&&toMin(j.time)<en&&jEnd(j)>st)}
+function conflictText(cs){return cs.map(j=>`${cust(j.customerId).name} ${fmtTimePlain(j.time)} to ${fmtTimePlain(fromMin(jEnd(j)))}`).join('; ')}
+function windowText(j){return `${fmtTimePlain(j.time)} to ${fmtTimePlain(fromMin(jEnd(j)))}`}
+function laneMap(js){const res={};let cl=[],clEnd=-1,ends=[];const flush=()=>{cl.forEach(j=>res[j.id].lanes=ends.length);cl=[];ends=[];clEnd=-1};
+  js.slice().sort((a,b)=>toMin(a.time)-toMin(b.time)).forEach(j=>{const st=toMin(j.time),en=jEnd(j);if(cl.length&&st>=clEnd)flush();let li=ends.findIndex(x=>x<=st);if(li<0){li=ends.length;ends.push(en)}else ends[li]=en;res[j.id]={lane:li,lanes:1};cl.push(j);clEnd=Math.max(clEnd,en)});flush();return res}
+function initials(n){const p=String(n).split(' ');return(p[0][0]||'')+(p[1]?p[1][0]:'')}
+function shortName(n){const p=String(n).split(' ');return p[0]+(p[1]?' '+p[1][0]+'.':'')}
+function boardCols(){return[{id:'',name:'Unassigned',trade:null},...state.techs.filter(t=>ui.trade==='all'||t.trade===ui.trade)]}
+function dayConflicts(sel){let n=0;state.techs.forEach(t=>{const js=state.jobs.filter(j=>j.date===sel&&j.techId===t.id);const L=laneMap(js);n+=js.filter(j=>L[j.id].lanes>1).length});return n}
+function viewBoard(sel){
+  const cols=boardCols(),vis=j=>ui.trade==='all'||j.trade===ui.trade,hours=BE-BS,now=new Date(),nowMin=now.getHours()*60+now.getMinutes();
+  let h=`<div class="board" style="--cols:${cols.length}"><div class="board-in">
+  <div class="bcorner"></div>${cols.map(t=>{const js=state.jobs.filter(j=>j.date===sel&&j.techId===t.id&&vis(j)),op=t.id&&sel===today()&&openPunch(t.id),hrs=js.reduce((x,j)=>x+(j.dur||3),0);
+    return `<div class="bh"><span class="av" style="--tc:${t.trade?TR[t.trade].color:'var(--muted)'}">${t.id?initials(t.name):'?'}</span><span class="bn">${esc(t.id?shortName(t.name):'Unassigned')}</span><span class="bm">${js.length} job${js.length===1?'':'s'}${t.id?`, ${r1(hrs)} hr`:''}${op?'<i class="on" title="Clocked in"></i>':''}</span></div>`}).join('')}
+  <div class="bgut" style="height:${hours*PX}px">${[...Array(hours)].map((_,i)=>{const hr=BS+i;return `<span style="top:${i*PX}px">${hr%12||12} ${hr<12?'AM':'PM'}</span>`}).join('')}</div>
+  ${cols.map(t=>{const js=state.jobs.filter(j=>j.date===sel&&j.techId===t.id&&vis(j)),L=laneMap(js);
+    return `<div class="bcol" data-col="${t.id}" data-act="slot" style="height:${hours*PX}px" aria-label="${esc(t.name)} schedule">${sel===today()&&nowMin>BS*60&&nowMin<BE*60?`<span class="nowline" style="top:${(nowMin-BS*60)/60*PX}px"></span>`:''}
+    ${js.map(j=>{const c=cust(j.customerId),st=toMin(j.time),en=jEnd(j),top=Math.max(0,(st-BS*60)/60*PX),ht=Math.max(30,(Math.min(en,BE*60)-Math.max(st,BS*60))/60*PX-3),n=nums(j),l=L[j.id],cf=t.id&&l.lanes>1,closed=!!j.invoice;
+      return `<button class="blk ${j.status} ${cf?'conflict':''}" style="--tc:${TR[j.trade].color};top:${top}px;height:${ht}px;--lane:${l.lane};--lanes:${l.lanes}" ${closed?'':`draggable="true" data-drag="${j.id}"`} data-act="open-job" data-id="${j.id}">
+      <strong>${esc(jobName(j))}</strong><span>${fmtTimePlain(j.time)} to ${fmtTimePlain(fromMin(en))}</span>${n.billed?`<span class="num">${money(n.billed,2)}</span>`:''}<span class="bs">${cf?'Double booked':STATUS[j.status]}</span></button>`}).join('')}</div>`}).join('')}
+  </div></div><p class="sub small" style="margin-top:8px">Drag a job to another tech or time to move it. Tap an open slot to book a new job there.</p>`;
+  return h;
+}
+function viewList(sel){
+  const vis=j=>ui.trade==='all'||j.trade===ui.trade;let h='';
+  boardCols().forEach(t=>{const js=state.jobs.filter(j=>j.date===sel&&j.techId===t.id&&vis(j)).sort((a,b)=>a.time.localeCompare(b.time));if(!t.id&&!js.length)return;const op=t.id&&sel===today()&&openPunch(t.id),L=laneMap(js);
+    h+=`<div class="techblock"><div class="techblock-head"><h3>${esc(t.name)}</h3><span class="muted small">${!t.id?'Needs a tech':op?'Clocked in '+stampTime(op.in):sel===today()?'Not clocked in':''}</span></div>${js.length?js.map(j=>t.id&&L[j.id].lanes>1?jobRow(j).replace('<span class="pill','<span class="pill bad">Double booked</span><span class="pill'):jobRow(j)).join(''):`<div class="opengap">Open all day</div>`}</div>`});
+  return h;
+}
+function viewSchedule(){
+  const sel=ui.day||today(),ws=weekStart(sel),days=[...Array(7)].map((_,i)=>addDays(ws,i));
+  const vis=j=>ui.trade==='all'||j.trade===ui.trade,waitingJobs=state.jobs.filter(j=>j.status==='parts');
+  const dayJobs=state.jobs.filter(j=>j.date===sel&&vis(j)),booked=dayJobs.reduce((x,j)=>x+nums(j).billed,0),unas=dayJobs.filter(j=>!j.techId).length,dbl=dayConflicts(sel);
+  let h=`<h1>Schedule</h1><p class="sub">Week of ${fmtDate(ws)}</p>
+  <div class="weeknav"><button class="btn" data-act="wk" data-v="-7" aria-label="Previous week">‹</button><button class="btn" data-act="wktoday">Today</button><button class="btn" data-act="wk" data-v="7" aria-label="Next week">›</button>
+  <span class="seg" role="group" aria-label="Schedule view"><button class="${ui.mode==='board'?'on':''}" data-act="mode" data-v="board" aria-pressed="${ui.mode==='board'}">Board</button><button class="${ui.mode==='list'?'on':''}" data-act="mode" data-v="list" aria-pressed="${ui.mode==='list'}">List</button></span>
+  <button class="btn primary" data-act="newjob" style="margin-left:auto">New job</button></div>
+  <div class="strip">${days.map(d=>{const ct=state.jobs.filter(j=>j.date===d&&vis(j)).length,x=toDate(d),dc=dayConflicts(d);return `<button class="${d===sel?'on':''} ${d===today()?'today':''}" data-act="day" data-v="${d}" aria-pressed="${d===sel}"><span class="dw">${x.toLocaleDateString('en-US',{weekday:'short'})}</span><span class="dn num">${x.getDate()}</span><span class="dc">${ct?ct+' job'+(ct>1?'s':''):''}${dc?' <b class="dx">!</b>':''}</span></button>`}).join('')}</div>
+  <div class="chips">${['all',...TK].map(k=>`<button class="chip ${ui.trade===k?'on':''}" data-act="ftrade" data-v="${k}">${k==='all'?'All trades':TR[k].name}</button>`).join('')}</div>
+  <section class="panel" style="margin-top:8px"><div class="panel-head" style="margin-bottom:0"><h2>${dayLabel(sel)}</h2></div><div class="statgrid" style="grid-template-columns:repeat(4,1fr)"><div><span class="lab">Jobs</span><span class="num">${dayJobs.length}</span></div><div><span class="lab">Booked</span><span class="num">${money(booked)}</span></div><div><span class="lab">Unassigned</span><span class="num ${unas?'neg':''}">${unas}</span></div><div><span class="lab">Double booked</span><span class="num ${dbl?'neg':''}">${dbl}</span></div></div></section>`;
+  if(waitingJobs.length)h+=`<button class="banner" data-act="onlyparts"><span>${waitingJobs.length} job${waitingJobs.length>1?'s':''} waiting on parts</span><span class="small">${ui.onlyParts?'Hide':'Show'}</span></button>${ui.onlyParts?waitingJobs.map(j=>`<div class="muted small" style="margin-top:8px">${dayLabel(j.date)}</div>`+jobRow(j)).join(''):''}`;
+  if(dbl)h+=`<div class="banner" style="border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 10%,var(--surface))"><span>${dbl} jobs overlap on the same tech. They're flagged in red below.</span></div>`;
+  h+=ui.mode==='board'?viewBoard(sel):viewList(sel);
+  const up=state.jobs.filter(j=>OPEN.includes(j.status)&&j.date>sel&&vis(j)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,6);
+  if(up.length)h+=`<h2 style="margin-top:24px">Coming up</h2>`+up.map(j=>`<div class="muted small" style="margin-top:8px">${dayLabel(j.date)}${j.techId?'':', unassigned'}</div>`+jobRow(j)).join('');
+  return h;
+}
+/* ---------- job ---------- */
+const eqOf=(c,trade,locId)=>(c.equipment||[]).filter(e=>(!trade||e.trade===trade)&&(locId===undefined||(e.locId||null)===(locId||null)));
+function eqCard(e,cid){const age=e.year?new Date().getFullYear()-(+e.year):null,cc=e.condition==='Good'?'paid':e.condition==='Fair'?'parts':'bad',wOk=e.warranty&&e.warranty>=today();
+  return `<button class="eqcard" data-act="eq-edit" data-id="${cid}" data-v="${e.id}" style="--tc:${TR[e.trade].color}">${e.photo?`<img src="${e.photo}" alt="Data plate photo">`:`<span class="eqph">No photo</span>`}
+  <span class="eqb"><strong>${esc(e.type)}</strong>${e.brand||e.model?`<span>${esc([e.brand,e.model].filter(Boolean).join(' '))}</span>`:''}${e.serial?`<span class="muted small">Serial ${esc(e.serial)}</span>`:''}
+  <span class="meta" style="margin-top:4px">${age!=null?`<span>${age} yr old</span>`:'<span>Age unknown</span>'}${e.size?`<span>${esc(e.size)}</span>`:''}${e.condition?`<span class="pill ${cc}">${esc(e.condition)}</span>`:'<span class="pill">Needs data plate info</span>'}${e.warranty?`<span class="pill ${wOk?'paid':''}">${wOk?'Warranty to '+fmtDate(e.warranty):'Warranty expired'}</span>`:''}</span></span></button>`}
+function eqPanel(c,trade,jobId,locId){const es=eqOf(c,trade,c.locations&&c.locations.length?locId||null:undefined);return `<section class="panel"><div class="panel-head"><h2>${trade?TR[trade].name+' equipment':'Equipment'}</h2><span class="muted small">${es.length} on file</span></div>
+  ${es.length?es.map(e=>eqCard(e,c.id)).join(''):`<div class="empty">No equipment recorded yet. Most customers don't know their equipment, so the tech records it from the data plate on site.</div>`}
+  ${trade?`<button class="btn block" style="margin-top:10px" data-act="eq-new" data-id="${c.id}" data-v="${trade}" data-l="${locId||''}">Add ${TR[trade].name} equipment</button>`:`<div class="row" style="margin-top:10px">${TK.map(k=>`<button class="btn slim" data-act="eq-new" data-id="${c.id}" data-v="${k}">Add ${TR[k].name}</button>`).join('')}</div>`}</section>`}
+function siteDl(c,trade){const s=(c.site||{})[trade]||{};const rows=SITE[trade].filter(f=>s[f.k]).map(f=>`<dt>${f.l}</dt><dd>${esc(f.t==='date'?fmtDate(s[f.k]):s[f.k])}</dd>`).join('');return rows?`<dl class="dl">${rows}</dl>`:`<div class="empty">No ${TR[trade].name} site details yet.</div>`}
+function viewJob(id){
+  const j=job(id);if(!j)return`<button class="back" data-act="go" data-go="schedule">‹ Schedule</button><p>Job not found.</p>`;
+  const c=cust(j.customerId),tk=tech(j.techId),n=nums(j),cl=CHECK[j.trade],closed=!!j.invoice,doneCt=cl.filter((_,i)=>j.checklist[i]).length;
+  let act='';
+  if(j.status==='scheduled')act=`<button class="btn primary" data-act="omw" data-id="${j.id}">On my way</button><button class="btn" data-act="start" data-id="${j.id}">Start job</button>`;
+  if(j.status==='enroute')act=`<button class="btn primary" data-act="start" data-id="${j.id}">Arrived, start job</button>`;
+  if(j.status==='progress')act=`<button class="btn primary" data-act="complete" data-id="${j.id}">Complete job</button>`;
+  if(j.status==='parts')act=`<button class="btn primary" data-act="resched" data-id="${j.id}">Parts arrived, reschedule</button>`;
+  if(closed)act=`<button class="btn primary" data-act="open-invoice" data-id="${j.id}">View invoice ${esc(j.invoice.num)}</button>`;
+  if(!closed&&j.status!=='parts')act+=`<button class="btn" data-act="need-parts" data-id="${j.id}">Needs parts</button>`;
+  if(!closed&&j.status!=='parts')act+=`<button class="btn" data-act="resched" data-id="${j.id}">Reschedule</button>`;
+  const map='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(jobAddr(j)),loc=locOf(c,j.locId);
+  return `<button class="back" data-act="go" data-go="schedule">‹ Schedule</button>
+  <div class="jobhead" style="--tc:${TR[j.trade].color}">
+    <div class="meta" style="margin-top:0"><span class="tag">${TR[j.trade].name}</span><span class="pill ${j.status}">${STATUS[j.status]}</span><span>${esc(j.num)}</span></div>
+    <h1 style="margin-top:8px">${esc(jobName(j))}</h1><p class="sub">${esc(j.desc)}</p>
+    ${n.plan?`<div class="callout" style="margin-top:8px"><strong>${esc(n.plan)} member.</strong> ${n.pctOff}% off repairs${planOf(memFor(j.customerId,j.date).planId).freeDiag?', free diagnostics, no after-hours fees':''} applied automatically.${c.parentId&&memFor(j.customerId,j.date).customerId!==c.id?` Covered through ${esc(cust(c.parentId).name)}.`:''}</div>`:''}
+    ${c.parentId?`<p class="sub small" style="margin-top:6px">Tenant of ${esc(cust(c.parentId).name)}. ${c.billTo==='parent'?'Bills to '+esc(cust(c.parentId).name)+'.':'Tenant pays.'}</p>`:''}
+    <p class="sub small" style="margin-top:6px">${dayLabel(j.date)}, ${windowText(j)}, ${j.techId?'with '+esc(tk.name):'<strong class="neg">not assigned to a tech</strong>'}</p>
+    ${j.status==='parts'?`<div class="callout warn"><strong>Parts needed:</strong> ${esc(j.partsNeeded)}</div>`:''}
+    <div class="actions">${act}</div>
+    <div class="contact"><button class="btn" data-act="call" data-id="${c.id}">Call</button><button class="btn" data-act="text" data-id="${c.id}">Text</button><button class="btn" data-act="open-cust" data-id="${c.id}">Profile</button></div>
+    <div class="officeline">Calls and texts go out from the office line, ${esc(state.officePhone)}</div>
+  </div>
+  <section class="panel private"><div class="panel-head"><h2>Private notes</h2><span class="muted small">Office and techs only</span></div>
+    ${j.notes.length?j.notes.map(x=>`<div class="note"><div class="by">${esc(x.by)}, ${stampLabel(x.at)}</div><div>${esc(x.text)}</div></div>`).join(''):`<p class="sub small">No notes yet. Notes here never show on the invoice or customer emails.</p>`}
+    <div class="grid2" style="margin-top:4px"><div><label class="f" for="noteBy">From</label><select id="noteBy"><option>${esc(state.csr)}</option>${state.techs.map(t=>`<option ${t.id===j.techId?'':''}>${esc(t.name)}</option>`).join('')}</select></div></div>
+    <label class="f" for="noteText">Add a note</label><textarea id="noteText" placeholder="Gate codes, customer concerns, what to quote, what not to say"></textarea>
+    <button class="btn block" style="margin-top:10px" data-act="add-note" data-id="${j.id}">Add private note</button></section>
+  <section class="panel"><div class="panel-head"><h2>Where the job is</h2><a href="${map}" target="_blank" rel="noopener">Open in Maps</a></div>
+    <dl class="dl">${loc?`<dt>Building</dt><dd>${esc(loc.name)}</dd>`:''}<dt>Address</dt><dd>${esc(jobAddr(j))}</dd>${j.locNote?`<dt>Work location</dt><dd>${esc(j.locNote)}</dd>`:''}${c.access?`<dt>Access notes</dt><dd>${esc(c.access)}</dd>`:''}<dt>Customer type</dt><dd>${esc(c.type)}, ${TERMS[c.terms].l}</dd></dl></section>
+  <section class="panel"><div class="panel-head"><h2>${TR[j.trade].name} site details</h2><button class="btn slim" data-act="edit-site" data-id="${j.id}">Edit</button></div>${siteDl(c,j.trade)}</section>
+  ${eqPanel(c,j.trade,j.id,j.locId)}
+  <section class="panel"><div class="panel-head"><h2>${TR[j.trade].name} checklist</h2><span class="muted small">${doneCt} of ${cl.length} done</span></div>
+    <div class="progressline"><span style="width:${doneCt/cl.length*100}%"></span></div>
+    ${cl.map((x,i)=>`<label class="check ${j.checklist[i]?'done':''}"><input type="checkbox" data-chg="check" data-id="${j.id}" data-i="${i}" ${j.checklist[i]?'checked':''} ${closed?'disabled':''}><span>${esc(x)}</span></label>`).join('')}</section>
+  <section class="panel"><div class="panel-head"><h2>Flat-rate work</h2><span class="muted small">What the customer pays</span></div>
+    ${j.tasks.length?j.tasks.map((l,i)=>{const p=pb(l.id);if(!p)return'';return `<div class="line"><div><div class="nm">${esc(p.name)}</div><div class="inc">${esc(p.includes)}</div>
+      ${closed?`<div class="inc">Qty ${l.qty}</div>`:`<div class="stepper"><button data-act="qty" data-id="${j.id}" data-i="${i}" data-d="-1" aria-label="Decrease">−</button><span>${l.qty}</span><button data-act="qty" data-id="${j.id}" data-i="${i}" data-d="1" aria-label="Increase">+</button></div>`}</div>
+      <div class="amt num">${l.incl?'<span class="pill paid">Included in plan</span>':money(lp(l,p)*l.qty)}</div></div>`}).join('')+(n.disc?`<div class="line"><div><div class="nm">${esc(n.plan)} member savings</div><div class="inc">${n.freeD?'Free diagnostic, ':''}${n.pctOff}% off</div></div><div class="amt num" style="color:var(--good)">-${money(n.disc,2)}</div></div>`:''):`<div class="empty">No flat-rate tasks yet. Add what the customer is approving.</div>`}
+    ${closed?'':`<button class="btn block" style="margin-top:10px" data-act="picker" data-id="${j.id}">Add flat-rate task</button>`}
+    <div class="total"><strong>Customer total</strong><span class="num">${money(n.billed)}</span></div></section>
+  <section class="panel"><div class="panel-head"><h2>Parts and materials used</h2><span class="muted small">Shows on the invoice</span></div>
+    <p class="sub small">Parts from inventory come out of stock automatically. Their cost counts against this job, and the customer sees them listed as included in the flat rate.</p>
+    ${j.materials.map((x,i)=>`<div class="line"><div><div class="nm" style="font-weight:600">${esc(x.name)}</div><div class="inc">${x.itemId?'From inventory':'Not stocked'}, qty ${x.qty}, ${money(+x.cost,2)} each</div></div><div class="row"><span class="num" style="font-size:18px">${money(x.cost*x.qty,2)}</span>${closed?'':`<button class="btn slim danger" data-act="rm-mat" data-id="${j.id}" data-i="${i}" aria-label="Remove ${esc(x.name)}">Remove</button>`}</div></div>`).join('')}
+    ${closed?'':`<button class="btn block" style="margin-top:10px" data-act="invpick" data-id="${j.id}">Add part from inventory</button>
+    <details style="margin-top:10px"><summary class="small" style="cursor:pointer;font-weight:600">Part not in inventory</summary><div class="inlineadd"><label><span class="sr">Part name</span><input id="xpName" placeholder="Part name"></label><label><span class="sr">Cost</span><input id="xpCost" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Cost $"></label><button class="btn" data-act="add-mat" data-id="${j.id}">Add</button></div></details>`}</section>
+  <section class="panel"><div class="panel-head"><h2>Job summary</h2><span class="muted small">Emailed with the invoice</span></div>
+    ${closed?(j.summary?`<div class="summarybox">${esc(j.summary)}</div>`:'')+(j.recs?`<h3 style="margin-top:12px">Recommendations</h3><div class="summarybox">${esc(j.recs)}</div>`:''):`<label class="f" for="sumText">What we found and what we did</label><textarea id="sumText" data-chg="summary" data-id="${j.id}" placeholder="Written for the customer. Example: Found a failed capacitor stopping the outdoor fan. Replaced it and confirmed the system is cooling normally.">${esc(j.summary)}</textarea>
+    <label class="f" for="recText">Recommendations <span class="muted" style="font-weight:400">(optional)</span></label><textarea id="recText" data-chg="recs" data-id="${j.id}" placeholder="Future work to consider, like replacing an aging unit or adding a riser">${esc(j.recs)}</textarea>`}</section>
+  <section class="panel"><div class="panel-head"><h2>Job costing</h2></div>
+    <p class="sub small">Only your team sees this. The customer only sees the flat-rate price.</p>
+    ${costBar(n.billed,n.labor,n.parts)}${legend(n.billed,n.labor,n.parts,`${r1(n.hours)} hr at ${money(tk.rate)}${j.hours==null?', estimate':''}`,n.partsActual?'actual':'price book estimate')}
+    ${closed?'':`<label class="f" for="hrs">Actual hours on this job <span class="muted" style="font-weight:400">(price book estimate: ${n.std} hr)</span></label><input id="hrs" type="number" inputmode="decimal" step="0.25" min="0" placeholder="${n.std}" value="${j.hours==null?'':j.hours}" data-chg="hours" data-id="${j.id}">`}
+  </section>`;
+}
+
+/* ---------- invoice ---------- */
+function matList(j){return j.materials.length?j.materials.map(x=>`${x.name}${x.qty>1?` (${x.qty})`:''}`):j.tasks.map(l=>pb(l.id)).filter(Boolean).map(p=>p.includes)}
+function viewInvoice(id){
+  const j=job(id);if(!j||!j.invoice)return`<button class="back" data-act="go" data-go="schedule">‹ Schedule</button><p>No invoice for this job yet.</p>`;
+  const c=cust(j.customerId),bc=billCust(c),loc=locOf(c,j.locId),inv=j.invoice,n=nums(j),due=addDays(inv.date,TERMS[inv.terms].d),paid=j.status==='paid',late=!paid&&daysBetween(due,today())>0,mats=matList(j),pays=inv.payments||[],bal=balance(j);
+  return `<button class="back" data-act="open-job" data-id="${j.id}">‹ Back to job</button>
+  <div class="inv">${paid?`<div class="stamp">PAID ${fmtDate(inv.paidDate)}</div>`:''}
+    <div class="inv-top"><div>${brandHead(true)}<div class="muted small">${[state.companyAddress,state.officePhone,state.website,state.license?'License '+state.license:''].filter(Boolean).map(esc).join('<br>')}</div></div>
+    <div style="text-align:right"><div class="muted small">Invoice</div><div class="num">${esc(inv.num)}</div></div></div>
+    <div class="cols">
+      <div><div class="lab">Bill to</div>${esc(bc.name)}<br>${esc(bc.billing||bc.address)}</div>
+      <div><div class="lab">Service address</div>${bc!==c?esc(c.name)+'<br>':''}${loc?esc(loc.name)+'<br>':''}${esc(jobAddr(j))}</div>
+      <div><div class="lab">Invoice date</div>${fmtDate(inv.date)}</div>
+      <div><div class="lab">Terms</div>${paid?TERMS[inv.terms].l:`<select data-chg="terms" data-id="${j.id}" aria-label="Payment terms" style="margin-top:2px">${Object.entries(TERMS).map(([k,v])=>`<option value="${k}" ${inv.terms===k?'selected':''}>${v.l}</option>`).join('')}</select>`}</div>
+      <div><div class="lab">Due date</div><span class="${late?'neg':''}" style="font-weight:600">${fmtDate(due)}${late?`, ${daysBetween(due,today())} days past due`:''}</span></div>
+      <div><div class="lab">Technician</div>${esc(tech(j.techId).name)}</div>
+    </div>
+    ${j.summary?`<h3 style="margin-top:16px">Job summary</h3><div class="summarybox">${esc(j.summary)}</div>`:''}
+    ${j.recs?`<h3 style="margin-top:12px">Recommendations</h3><div class="summarybox">${esc(j.recs)}</div>`:''}
+    <div class="tablewrap" style="margin-top:16px"><table><thead><tr><th>Service</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Amount</th></tr></thead><tbody>
+    ${j.tasks.map(l=>{const p=pb(l.id);if(!p)return'';return `<tr><td style="white-space:normal"><strong>${esc(p.name)}</strong><br><span class="muted small">${esc(p.includes)}</span></td><td class="r">${l.qty}</td><td class="r">${l.incl?'Included':money(lp(l,p),2)}</td><td class="r">${l.incl?'$0.00':money(lp(l,p)*l.qty,2)}</td></tr>`}).join('')}
+    ${n.disc?`<tr><td colspan="3">Subtotal</td><td class="r">${money(n.gross,2)}</td></tr><tr><td colspan="3" style="white-space:normal;color:var(--good)"><strong>${esc(n.plan)} member savings</strong> (${n.freeD?'free diagnostic, ':''}${n.pctOff}% off)</td><td class="r" style="color:var(--good)">-${money(n.disc,2)}</td></tr>`:''}
+    </tbody></table></div>
+    ${inv.showMaterials&&mats.length?`<div class="callout" style="margin-top:12px"><strong>Parts and materials included:</strong> ${mats.map(esc).join('; ')}</div>`:''}
+    <p class="muted small" style="margin-top:10px">Flat-rate prices include all labor and materials for each service listed.</p>
+    ${pays.length?`<div class="legend" style="margin-top:12px"><span class="k">Invoice total</span><span class="v num">${money(n.billed,2)}</span>${pays.map(py=>`<span class="k">Paid ${fmtDate(py.date)}, ${esc(PM[py.method])}${py.ref?' #'+esc(py.ref):''}</span><span class="v num" style="color:var(--good)">-${money(py.amount,2)}</span>`).join('')}</div>`:''}
+    <div class="total"><strong>${bal<=0?'Paid in full':'Balance due'}</strong><span class="num">${money(bal,2)}</span></div>
+    ${bal>0&&inv.linkSent?`<p class="sub small" style="margin-top:8px">Payment link texted to the customer ${fmtDate(inv.linkSent)}. This marks paid automatically when they pay.</p>`:''}
+  </div>
+  <div class="badge ${inv.qbo?'':'off'}">${inv.qbo?`Synced to QuickBooks Online${paid?', payment recorded':''}`:'Not synced to QuickBooks'}</div>
+  <label class="toggle"><input type="checkbox" data-chg="mats" data-id="${j.id}" ${inv.showMaterials?'checked':''}> List parts and materials on the invoice</label>
+  <div class="actions"><button class="btn dark" data-act="email-inv" data-id="${j.id}">Email invoice and job summary</button>${paid?'':`<button class="btn primary" data-act="pay" data-id="${j.id}">Take payment</button>`}</div>
+  ${!paid&&inv.linkSent?`<button class="btn slim" style="margin-top:8px" data-act="sim-linkpay" data-id="${j.id}">Prototype only: simulate the customer paying the link</button>`:''}
+  ${inv.emailed?`<p class="sub small" style="margin-top:8px">Emailed to ${esc(bc.email)}</p>`:''}`;
+}
+
+/* ---------- intake ---------- */
+function newDraft(){return{trade:null,customerId:'new',cust:{name:'',type:'Residential',phone:'',email:'',address:'',billing:'',terms:'due',access:'',source:'Google'},site:{},job:{desc:'',loc:'',date:ui.day&&ui.day>=today()?ui.day:today(),time:'08:00',techId:'',note:'',dur:'3'}}}
+const DURS=[['1','1 hour'],['1.5','1.5 hours'],['2','2 hours'],['3','3 hours'],['4','4 hours'],['6','6 hours'],['8','All day']];
+function fld(g,k,label,val,type,opts,extra){const id='i_'+g+'_'+k;
+  if(opts)return `<label class="f" for="${id}">${label}</label><select id="${id}" data-g="${g}" data-k="${k}"><option value="">Select</option>${opts.map(o=>{const[v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(val)===String(v)?'selected':''}>${esc(l)}</option>`}).join('')}</select>`;
+  if(type==='textarea')return `<label class="f" for="${id}">${label}</label><textarea id="${id}" data-g="${g}" data-k="${k}" ${extra||''}>${esc(val)}</textarea>`;
+  return `<label class="f" for="${id}">${label}</label><input id="${id}" type="${type||'text'}" data-g="${g}" data-k="${k}" value="${esc(val)}" ${extra||''}>`}
+function syncIntake(){if(!intake)return;document.querySelectorAll('#app [data-g]').forEach(el=>{const g=el.dataset.g,k=el.dataset.k;if(g==='root')intake[k]=el.value;else if(intake[g])intake[g][k]=el.value})}
+function viewIntake(){
+  if(!intake)intake=newDraft();const d=intake;
+  let h=`<button class="back" data-act="go" data-go="schedule">‹ Schedule</button><h1>New job</h1><p class="sub">Customer intake. Pick the trade first to open its form.</p>
+  <div class="tradepick">${TK.map(k=>`<button style="--tc:${TR[k].color}" class="${d.trade===k?'on':''}" data-act="itrade" data-v="${k}" aria-pressed="${d.trade===k}"><i></i>${TR[k].name}</button>`).join('')}</div>`;
+  if(!d.trade)return h;
+  const ex=d.customerId!=='new'?cust(d.customerId):null;
+  h+=`<section class="panel"><h2>Customer</h2><label class="f" for="icust">Existing or new</label><select id="icust" data-g="root" data-k="customerId" data-chg="icust"><option value="new">New customer</option>${state.customers.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`<option value="${c.id}" ${d.customerId===c.id?'selected':''}>${esc(c.name)}${c.parentId?' (tenant of '+esc(cust(c.parentId).name)+')':''}</option>`).join('')}</select>`;
+  if(ex&&ex.locations&&ex.locations.length)h+=fld('job','locId','Which building?',d.job.locId||'',null,ex.locations.map(l=>[l.id,l.name]));
+  if(ex&&memFor(ex.id))h+=`<div class="callout" style="margin-top:12px"><strong>${esc(shortPlan(planOf(memFor(ex.id).planId)))} member.</strong> ${planOf(memFor(ex.id).planId).discount}% off applies automatically. Book them with priority.</div>`;
+  if(ex)h+=`<dl class="dl" style="margin-top:12px"><dt>Address</dt><dd>${esc(ex.address)}</dd><dt>Phone</dt><dd>${esc(ex.phone)}</dd><dt>Terms</dt><dd>${TERMS[ex.terms].l}</dd>${ex.access?`<dt>Access notes</dt><dd>${esc(ex.access)}</dd>`:''}</dl>`;
+  else{const c=d.cust;h+=fld('cust','name','Name or company',c.name,'text',null,'autocomplete="name"')+`<div class="grid2">${fld('cust','type','Customer type',c.type,null,['Residential','Commercial'])}${fld('cust','terms','Payment terms',c.terms,null,Object.entries(TERMS).map(([k,v])=>[k,v.l]))}</div>
+    <div class="grid2">${fld('cust','phone','Phone',c.phone,'tel',null,'inputmode="tel" autocomplete="tel"')}${fld('cust','email','Email',c.email,'email',null,'autocomplete="email"')}</div>
+    ${fld('cust','address','Service address',c.address,'text',null,'autocomplete="street-address"')}${fld('cust','billing','Billing address',c.billing,'text',null,'placeholder="Leave blank if same as service address"')}
+    ${fld('cust','access','Access notes',c.access,'text',null,'placeholder="Gate code, pets, parking"')}${fld('cust','source','How did they hear about us?',c.source,null,['Google','Referral','Repeat customer','Facebook','Yard sign','Truck wrap','Other'])}`}
+  h+=`</section><section class="panel" style="border-left:6px solid ${TR[d.trade].color}"><h2>${TR[d.trade].name} site details</h2><p class="sub small">Ask what the customer knows and skip anything they're not sure of. The tech records the actual equipment from the data plates on site.</p>`;
+  const base=ex?((ex.site||{})[d.trade]||{}):{};
+  SITE[d.trade].forEach(f=>{const v=d.site[f.k]!==undefined?d.site[f.k]:(base[f.k]||'');h+=fld('site',f.k,f.l,v,f.t,f.o)});
+  const trT=state.techs.filter(t=>t.trade===d.trade),oth=state.techs.filter(t=>t.trade!==d.trade),tId=d.job.techId||(trT[0]||{}).id||'';
+  h+=`</section><section class="panel"><h2>Job and schedule</h2>${fld('job','desc','What is the problem?',d.job.desc,'textarea',null,'placeholder="Customer\'s description of the issue"')}
+  ${fld('job','loc','Exact work location on the property',d.job.loc,'text',null,d.trade==='septic'?'placeholder="Where the tank lids are"':'placeholder="Which unit, room, or area"')}
+  <div class="grid2">${fld('job','date','Date (schedule as far out as you need)',d.job.date,'date')}${fld('job','time','Arrival time',d.job.time,'time')}</div>
+  <div class="grid2">${fld('job','dur','Arrival window',d.job.dur,null,DURS)}${fld('job','techId','Assign tech',tId,null,[...trT,...oth].map(t=>[t.id,t.name+(t.trade!==d.trade?` (${TR[t.trade].name})`:'')]).concat([['none','Unassigned']]))}</div><div id="iWarn"></div></section>
+  <section class="panel private"><h2>Private note for the tech</h2><p class="sub small">Only your team sees this. It never goes on the invoice.</p>${fld('job','note','Note',d.job.note,'textarea',null,'placeholder="What the customer said on the phone, what to quote, anything to watch for"')}
+  <button class="btn primary block" style="margin-top:18px" data-act="isave">Create and schedule job</button></section>`;
+  return h;
+}
+
+/* ---------- time clock ---------- */
+function viewClock(){
+  const me=tech(ui.me),op=openPunch(ui.me),ws=weekStart(today());
+  const mine=state.punches.filter(p=>p.techId===ui.me&&p.in.slice(0,10)>=ws).sort((a,b)=>b.in.localeCompare(a.in));
+  const wkHrs=mine.reduce((s,p)=>s+punchHours(p),0);
+  let h=`<h1>Time clock</h1><p class="sub">Clock hours drive payroll cost in Reports, so you can compare what each tech bills with what you pay them.</p>
+  <label class="f" for="me">Who is clocking in?</label><select id="me" data-chg="me">${state.techs.map(t=>`<option value="${t.id}" ${t.id===ui.me?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+  <section class="panel clockcard">${op?`<div class="muted">Clocked in since ${stampTime(op.in)}</div><div class="big num">${r1(punchHours(op))} hr</div><button class="btn dark" data-act="clock-out">Clock out</button>`
+    :`<div class="muted">${esc(first(me.name))} is clocked out</div><div class="big num">${new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div><button class="btn primary" data-act="clock-in">Clock in</button>`}</section>
+  <section class="panel"><div class="panel-head"><h2>${esc(first(me.name))}'s week</h2><span class="num" style="font-size:20px">${r1(wkHrs)} hr</span></div>
+  ${mine.length?`<div class="tablewrap"><table style="min-width:320px"><thead><tr><th>Day</th><th>In</th><th>Out</th><th class="r">Hours</th></tr></thead><tbody>${mine.map(p=>`<tr><td>${dayLabel(p.in.slice(0,10))}</td><td>${stampTime(p.in)}</td><td>${p.out?stampTime(p.out):'<span class="pill progress">On the clock</span>'}</td><td class="r">${r1(punchHours(p))}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No time this week yet.</div>`}
+  <p class="sub small" style="margin-top:8px">Pay this week at ${money(me.rate)}/hr loaded cost: <strong>${money(wkHrs*me.rate)}</strong></p></section>
+  <h2 style="margin-top:22px">Team timesheet, this week</h2><section class="panel" style="padding-top:6px"><div class="tablewrap"><table><thead><tr><th>Tech</th><th>Right now</th><th class="r">Hours</th><th class="r">Labor cost</th><th class="r">Billed</th></tr></thead><tbody>
+  ${state.techs.map(t=>{const ps=state.punches.filter(p=>p.techId===t.id&&p.in.slice(0,10)>=ws),hr=ps.reduce((s,p)=>s+punchHours(p),0),o=openPunch(t.id),billed=state.jobs.filter(j=>j.techId===t.id&&j.invoice&&j.invoice.date>=ws).reduce((s,j)=>s+nums(j).billed,0);
+    return `<tr><td>${esc(t.name)}</td><td>${o?`<span class="pill progress">In since ${stampTime(o.in)}</span>`:'<span class="pill">Out</span>'}</td><td class="r">${r1(hr)}</td><td class="r">${money(hr*t.rate)}</td><td class="r">${money(billed)}</td></tr>`}).join('')}</tbody></table></div></section>`;
+  return h;
+}
+
+/* ---------- price book ---------- */
+function viewPricebook(){
+  const tr=ui.pbTrade,items=state.pricebook.filter(p=>p.trade===tr),rate=avgRate(tr),tgt=state.targetMargin/100;
+  return `<h1>Price book</h1><p class="sub">Every flat-rate price is labor hours at <strong>${money(state.laborRate)}/hr</strong> plus parts marked up ${state.partsMarkup}%, with ${state.cardCover}% added to cover card processing. Customers see one price, no card fee. Change any of these in Settings and every formula price updates.</p>
+  <div class="chips">${TK.map(k=>`<button class="chip ${tr===k?'on':''}" data-act="pbtrade" data-v="${k}">${TR[k].name} <span class="muted">${state.pricebook.filter(p=>p.trade===k).length}</span></button>`).join('')}</div>
+  <section class="panel" style="border-left:6px solid ${TR[tr].color}">${items.length?items.map(p=>{const g=p.price-p.parts-p.hours*rate,m=p.price?g/p.price:0;return `<button class="pbrow" data-act="pbedit" data-id="${p.id}">
+    <span><strong>${esc(p.name)}</strong><br><span class="muted small">${esc(p.includes)}</span><br><span class="muted small">Labor ${p.hours} hr × ${money(state.laborRate)} = ${money(p.hours*state.laborRate,2)}, parts ${money(p.parts)} + ${state.partsMarkup}% = ${money(p.parts*(1+state.partsMarkup/100),2)}${state.cardCover?`, + ${state.cardCover}% card coverage`:''}</span></span>
+    <span style="text-align:right"><span class="price num" style="display:block">${money(p.price)}</span>${p.mode==='custom'?`<span class="pill parts" style="display:inline-block;margin-bottom:4px">Custom price</span><br>`:''}<span class="pill ${m<tgt-.1?'bad':m<tgt?'parts':'paid'}">${pct(m)} margin</span></span></button>`}).join(''):`<div class="empty">No ${TR[tr].name} tasks yet.</div>`}
+  <button class="btn block" style="margin-top:10px" data-act="pbnew">Add ${TR[tr].name} task</button></section>
+  <p class="muted small" style="margin-top:12px">Margin is what's left after parts and what you actually pay the tech (${money(rate)}/hr loaded, the ${TR[tr].name} average). Colors compare it to your ${state.targetMargin}% target.</p>`;
+}
+
+/* ---------- inventory ---------- */
+function invList(){const q=ui.invQ.toLowerCase();let it=state.inventory.filter(i=>(ui.invTrade==='all'||ui.invTrade==='low'||i.trade===ui.invTrade)&&(!q||(i.name+' '+i.sku+' '+i.loc).toLowerCase().includes(q)));
+  if(ui.invTrade==='low')it=it.filter(i=>i.onHand<=i.reorder);
+  return it.length?it.map(i=>`<button class="invrow" data-act="invedit" data-id="${i.id}"><span><strong>${esc(i.name)}</strong><br><span class="muted small">${esc(i.sku)}, ${esc(i.loc)}</span><br><span class="tag small" style="--tc:${TR[i.trade].color}">${TR[i.trade].name}</span> <span class="muted small">${money(i.cost,2)} each</span></span>
+  <span style="text-align:right"><span class="oh num" style="display:block">${i.onHand}</span><span class="small muted">on hand</span><br>${i.onHand<=0?'<span class="pill bad">Out</span>':i.onHand<=i.reorder?'<span class="pill parts">Reorder</span>':''}</span></button>`).join(''):`<div class="empty">No parts match.</div>`}
+function viewInventory(){
+  const val=state.inventory.reduce((s,i)=>s+i.cost*Math.max(0,i.onHand),0),low=state.inventory.filter(i=>i.onHand<=i.reorder).length;
+  return `<h1>Inventory</h1><p class="sub">Parts used on a job come out of stock automatically and show on that customer's invoice.</p>
+  <section class="panel"><div class="statgrid" style="margin-top:0"><div><span class="lab">Stock value</span><span class="num">${money(val)}</span></div><div><span class="lab">Parts tracked</span><span class="num">${state.inventory.length}</span></div><div><span class="lab">At or below reorder</span><span class="num ${low?'neg':''}">${low}</span></div></div></section>
+  <div class="chips"><button class="chip ${ui.invTrade==='all'?'on':''}" data-act="invtrade" data-v="all">All</button><button class="chip ${ui.invTrade==='low'?'on':''}" data-act="invtrade" data-v="low">Needs reorder</button>${TK.map(k=>`<button class="chip ${ui.invTrade===k?'on':''}" data-act="invtrade" data-v="${k}">${TR[k].name}</button>`).join('')}</div>
+  <label class="sr" for="invq">Search inventory</label><input id="invq" type="search" placeholder="Search by part, SKU, or location" value="${esc(ui.invQ)}" data-inp="invq">
+  <section class="panel"><div id="invlist">${invList()}</div><button class="btn block" style="margin-top:10px" data-act="invnew">Add part</button></section>`;
+}
+
+
+/* ---------- customers ---------- */
+function custStats(cid){const js=state.jobs.filter(j=>j.customerId===cid),c=cust(cid),billedTo=state.jobs.filter(j=>billCust(cust(j.customerId)).id===cid);
+  return{js,billed:billedTo.filter(j=>j.invoice).reduce((s,j)=>s+nums(j).billed,0),owed:billedTo.filter(j=>j.status==='invoiced').reduce((s,j)=>s+balance(j),0),
+    trades:TK.filter(k=>js.some(j=>j.trade===k)||(c.site||{})[k]||(c.equipment||[]).some(e=>e.trade===k)),next:js.filter(j=>OPEN.includes(j.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0]}}
+function custRow(c,sub){const st=custStats(c.id),m=memFor(c.id);return `<button class="invrow ${sub?'subrow':''}" data-act="open-cust" data-id="${c.id}"><span><strong>${sub?'↳ ':''}${esc(c.name)}</strong><br><span class="muted small">${c.parentId&&!sub?'Tenant of '+esc(cust(c.parentId).name)+', ':''}${c.locations&&c.locations.length?c.locations.length+' locations':esc(c.address)}</span><br><span class="meta" style="margin-top:4px">${m?`<span class="pill mem">${esc(shortPlan(planOf(m.planId)))}</span>`:''}${st.trades.map(k=>`<span class="tag" style="--tc:${TR[k].color}">${TR[k].name}</span>`).join('')}${c.type==='Commercial'?'<span class="pill">Commercial</span>':''}${kids(c.id).length?`<span class="pill">${kids(c.id).length} sub-accounts</span>`:''}</span></span>
+  <span style="text-align:right"><span class="num" style="display:block;font-size:20px">${money(st.billed)}</span><span class="small muted">lifetime</span>${st.owed?`<br><span class="pill bad">Owes ${money(st.owed)}</span>`:''}</span></button>`}
+function custList(){const q=ui.custQ.toLowerCase(),match=c=>(c.name+' '+c.address+' '+c.phone+' '+c.email+' '+(c.locations||[]).map(l=>l.name).join(' ')).toLowerCase().includes(q);
+  let cs=state.customers.filter(c=>q?match(c):!c.parentId);
+  if(ui.custF==='Residential'||ui.custF==='Commercial')cs=cs.filter(c=>c.type===ui.custF);
+  if(ui.custF==='owes')cs=cs.filter(c=>custStats(c.id).owed>0);
+  if(ui.custF==='members')cs=cs.filter(c=>memFor(c.id));
+  cs.sort((a,b)=>a.name.localeCompare(b.name));
+  return cs.length?cs.map(c=>custRow(c)+(q?'':kids(c.id).map(k=>custRow(k,true)).join(''))).join(''):`<div class="empty">No customers match.</div>`}
+function custSeg(){return `<span class="seg" role="group" aria-label="Customers or memberships" style="margin-top:6px"><button class="${view.name==='customers'?'on':''}" data-act="go" data-go="customers">Customers</button><button class="${view.name==='members'?'on':''}" data-act="go" data-go="members">Memberships</button></span>`}
+function viewCustomers(){
+  return `${custSeg()}<h1 style="margin-top:12px">Customers</h1><p class="sub">${state.customers.filter(c=>!c.parentId).length} accounts, ${state.customers.filter(c=>c.parentId).length} sub-accounts</p>
+  <div class="chips">${[['all','All'],['members','Members'],['Residential','Residential'],['Commercial','Commercial'],['owes','Owes money']].map(([k,l])=>`<button class="chip ${ui.custF===k?'on':''}" data-act="custf" data-v="${k}">${l}</button>`).join('')}</div>
+  <label class="sr" for="custq">Search customers</label><input id="custq" type="search" placeholder="Search name, address, phone, email, or building" value="${esc(ui.custQ)}" data-inp="custq">
+  <section class="panel"><div id="custlist">${custList()}</div><button class="btn block" style="margin-top:10px" data-act="custnew">Add customer</button></section>`;
+}
+function visitRow(m,v,showCust){const st=visitStatus(v),c=cust(v.cid),l=locOf(c,v.locId),vj=v.jobId&&job(v.jobId);
+  const pill=st==='done'?`<span class="pill paid">Done ${fmtDate(v.doneDate||(vj&&vj.invoice&&vj.invoice.date))}</span>`:st==='scheduled'?`<span class="pill progress">Scheduled ${fmtDate(vj.date)}</span>`:st==='overdue'?`<span class="pill bad">Overdue, was due ${fmtDate(v.due)}</span>`:`<span class="pill">Due ${fmtDate(v.due)}</span>`;
+  const btn=st==='due'||st==='overdue'?`<button class="btn slim" data-act="visit-sched" data-id="${m.id}" data-v="${v.id}">Schedule</button>`:st==='scheduled'?`<button class="btn slim" data-act="open-job" data-id="${v.jobId}">Open job</button>`:'';
+  const who=showCust?cust(m.customerId).name+(v.cid!==m.customerId?', '+c.name:'')+(l?', '+l.name:''):(v.cid!==m.customerId?c.name:'')+(l?l.name:'');
+  return `<div class="line"><div><div class="nm">${esc(v.label)}</div>${who?`<div class="inc">${esc(who)}</div>`:''}<div style="margin-top:6px">${pill}</div></div><div style="align-self:center">${btn}</div></div>`}
+function memCard(m){const pl=planOf(m.planId),u=unitsFor(m),price=contractPrice(m),done=m.visits.filter(v=>visitStatus(v)==='done').length,renewIn=daysBetween(today(),m.end),multi=m.targets.length>3;
+  const groups=pl.visits.map((pv,vi)=>{const vs=m.visits.filter(v=>v.vi===vi),dn=vs.filter(v=>visitStatus(v)==='done').length,od=vs.filter(v=>visitStatus(v)==='overdue').length,sc=vs.filter(v=>visitStatus(v)==='scheduled').length;
+    return multi?`<div class="line"><div><div class="nm">${esc(pv.label)}</div><div class="inc">Due ${fmtDate(vs[0].due)} at ${vs.length} locations</div><div class="meta" style="margin-top:6px"><span class="pill paid">${dn} done</span>${sc?`<span class="pill progress">${sc} scheduled</span>`:''}${od?`<span class="pill bad">${od} overdue</span>`:''}${vs.length-dn-sc-od?`<span class="pill">${vs.length-dn-sc-od} to schedule</span>`:''}</div></div><div style="align-self:center">${vs.some(v=>['due','overdue'].includes(visitStatus(v)))?`<button class="btn slim" data-act="visit-all" data-id="${m.id}" data-v="${vi}">Schedule all</button>`:''}</div></div>`:vs.map(v=>visitRow(m,v)).join('')}).join('');
+  return `<div class="memcard"><div class="panel-head"><h3>${esc(pl.name)}</h3><span class="num" style="font-size:22px">${money(price)}<span class="muted small" style="font-family:inherit;font-weight:500"> ${BILL[pl.billing]}</span></span></div>
+  <div class="meta" style="margin-top:0"><span>${fmtDate(m.start)} to ${fmtDate(m.end)}</span><span class="pill ${renewIn<60?'parts':''}">${renewIn<0?'Expired':'Renews in '+renewIn+' days'}${m.autoRenew?', auto-renew':''}</span><span>${pl.discount}% off jobs</span><span>${done} of ${m.visits.length} visits done</span></div>
+  ${pl.included?`<div class="callout" style="margin-top:10px">Covers <strong>${u.hvac} HVAC units</strong> and <strong>${u.wh} water heaters</strong>. ${pl.included.hvac} of each included, then ${money(pl.addonHvac)} per extra unit${m.price!=null&&m.price!==''?'. Custom contract price set':`: ${money(pl.price)} + ${Math.max(0,u.hvac-pl.included.hvac)} HVAC and ${Math.max(0,u.wh-pl.included.wh)} water heater add-ons = <strong>${money(price)}</strong>`}.</div>`:''}
+  ${m.targets.length>1?`<p class="sub small" style="margin-top:8px">Covers ${m.targets.length} ${m.coverSubs?'properties including sub-accounts':'locations'}. ${u.hvac} HVAC units on file.</p>`:''}
+  ${groups}
+  <div class="actions">${renewIn<60?`<button class="btn primary slim" data-act="mem-renew" data-id="${m.id}">Renew for another year</button>`:''}<button class="btn slim" data-act="mem-edit" data-id="${m.id}">Edit agreement</button></div></div>`}
+function viewMembers(){
+  const act=state.memberships.filter(m=>!m.cancelled&&m.start<=today()&&m.end>=today()),allV=act.flatMap(m=>m.visits.map(v=>({m,v,st:visitStatus(v)})));
+  const due30=allV.filter(x=>x.st==='due'&&x.v.due<=addDays(today(),30)),over=allV.filter(x=>x.st==='overdue'),ren=act.filter(m=>daysBetween(today(),m.end)<=60).sort((a,b)=>a.end.localeCompare(b.end));
+  const toSched=[...over,...due30].sort((a,b)=>a.v.due.localeCompare(b.v.due)),grouped={};toSched.forEach(x=>{const k=x.m.targets.length>3?x.m.id+'_'+x.v.vi:x.v.id;(grouped[k]=grouped[k]||[]).push(x)});
+  return `${custSeg()}<h1 style="margin-top:12px">Memberships</h1><p class="sub">Plans, contracts, and the maintenance visits they owe.</p>
+  <section class="panel"><div class="statgrid" style="margin-top:0"><div><span class="lab">Active agreements</span><span class="num">${act.length}</span></div><div><span class="lab">Plan revenue per year</span><span class="num">${money(act.reduce((x,m)=>x+annual(m),0))}</span></div><div><span class="lab">Visits covered</span><span class="num">${allV.length}</span></div>
+  <div><span class="lab">Overdue visits</span><span class="num ${over.length?'neg':''}">${over.length}</span></div><div><span class="lab">Due next 30 days</span><span class="num">${due30.length}</span></div><div><span class="lab">Renewals next 60 days</span><span class="num">${ren.length}</span></div></div></section>
+  <h2 style="margin-top:22px">Visits to schedule</h2><section class="panel" style="padding-top:6px">${Object.keys(grouped).length?Object.values(grouped).map(g=>{const x=g[0];if(g.length>1||x.m.targets.length>3){const od=g.filter(y=>y.st==='overdue').length;return `<div class="line"><div><div class="nm">${esc(cust(x.m.customerId).name)}: ${esc(x.v.label)}</div><div class="inc">${g.length} location${g.length>1?'s':''} still need this visit</div><div style="margin-top:6px">${od?`<span class="pill bad">${od} overdue</span>`:`<span class="pill">Due ${fmtDate(x.v.due)}</span>`}</div></div><div style="align-self:center"><button class="btn slim" data-act="open-cust" data-id="${x.m.customerId}">Open contract</button></div></div>`}return visitRow(x.m,x.v,true)}).join(''):`<div class="empty">Every visit due in the next 30 days is scheduled.</div>`}</section>
+  <h2 style="margin-top:22px">Plans</h2><div class="plangrid">${state.plans.map(pl=>{const cnt=act.filter(m=>m.planId===pl.id).length;return `<button class="plancard" data-act="plan-edit" data-id="${pl.id}"><span class="pill ${pl.type==='commercial'?'':'mem'}">${pl.type==='commercial'?'Commercial':'Residential'}</span><strong>${esc(pl.name)}</strong><span class="num" style="font-size:26px">${money(pl.price)}</span><span class="muted small">${BILL[pl.billing]}</span><span class="small">${pl.visits.length} visit${pl.visits.length===1?'':'s'} per year, ${pl.discount}% off jobs${pl.freeDiag?', free diagnostics':''}</span><span class="small muted">${cnt} active</span></button>`}).join('')}</div>
+  <button class="btn block" style="margin-top:10px" data-act="plan-new">Create a plan or custom contract</button>
+  <h2 style="margin-top:22px">Renewals coming up</h2><section class="panel" style="padding-top:6px">${ren.length?ren.map(m=>`<div class="line"><div><div class="nm">${esc(cust(m.customerId).name)}</div><div class="inc">${esc(planOf(m.planId).name)}, ends ${fmtDate(m.end)}</div></div><div class="row" style="align-self:center"><span class="num" style="font-size:18px">${money(contractPrice(m))}</span><button class="btn slim" data-act="open-cust" data-id="${m.customerId}">Open</button></div></div>`).join(''):`<div class="empty">No renewals in the next 60 days.</div>`}</section>
+  <h2 style="margin-top:22px">All agreements</h2><section class="panel" style="padding-top:6px"><div class="tablewrap"><table><thead><tr><th>Customer</th><th>Plan</th><th class="r">Price</th><th>Renews</th><th class="r">Visits done</th></tr></thead><tbody>
+  ${act.slice().sort((a,b)=>cust(a.customerId).name.localeCompare(cust(b.customerId).name)).map(m=>`<tr><td><button class="back" style="padding:0;color:var(--hvac)" data-act="open-cust" data-id="${m.customerId}">${esc(cust(m.customerId).name)}</button></td><td>${esc(shortPlan(planOf(m.planId)))}</td><td class="r">${money(contractPrice(m))}</td><td>${fmtDate(m.end)}</td><td class="r">${m.visits.filter(v=>visitStatus(v)==='done').length} of ${m.visits.length}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+function histRow(j){const n=nums(j);return `<button class="invrow" data-act="${j.invoice?'open-invoice':'open-job'}" data-id="${j.id}"><span><strong>${esc(j.desc)}</strong><br><span class="muted small">${fmtDate(j.date)}, ${esc(tech(j.techId).name)}</span><br><span class="meta" style="margin-top:4px"><span class="tag" style="--tc:${TR[j.trade].color}">${TR[j.trade].name}</span><span class="pill ${j.status}">${STATUS[j.status]}</span></span></span><span class="num" style="font-size:20px;text-align:right">${j.invoice?money(n.billed):''}</span></button>`}
+function viewCustomer(id){
+  const c=cust(id);if(!c.id)return`<button class="back" data-act="go" data-go="customers">‹ Customers</button><p>Customer not found.</p>`;
+  const st=custStats(id),up=st.js.filter(j=>OPEN.includes(j.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),past=st.js.filter(j=>j.invoice).sort((a,b)=>b.date.localeCompare(a.date));
+  const ms=state.messages.filter(m=>m.customerId===id).slice(-3),fu=state.followups.filter(f=>f.customerId===id&&f.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
+  const siteTrades=TK.filter(k=>(c.site||{})[k]),addable=TK.filter(k=>!(c.site||{})[k]),mems=state.memberships.filter(m=>m.customerId===c.id&&!m.cancelled&&m.end>=today()),parentMem=c.parentId&&memFor(c.id),subs=kids(c.id),locs=c.locations||[];
+  const locVisits=lid=>mems.flatMap(m=>m.visits.filter(v=>v.locId===lid).map(v=>({m,v})));
+  return `<button class="back" data-act="${c.parentId?'open-cust':'go'}" ${c.parentId?`data-id="${c.parentId}"`:'data-go="customers"'}>‹ ${c.parentId?esc(cust(c.parentId).name):'Customers'}</button>
+  ${c.parentId?`<div class="callout" style="margin:6px 0 4px">Sub-account of <button class="back" style="padding:0;color:var(--hvac)" data-act="open-cust" data-id="${c.parentId}">${esc(cust(c.parentId).name)}</button>. ${c.billTo==='parent'?'Invoices bill to '+esc(cust(c.parentId).name)+'.':'This tenant pays their own invoices.'}</div>`:''}
+  <div class="jobhead" style="--tc:var(--brand)">
+    <div class="meta" style="margin-top:0"><span class="pill">${esc(c.type)}</span><span>${TERMS[c.terms].l}</span>${state.ghl.connected?'<span class="pill paid">Synced to GoHighLevel</span>':''}</div>
+    <h1 style="margin-top:8px">${esc(c.name)}</h1><p class="sub">${esc(c.address)}</p>
+    <div class="statgrid"><div><span class="lab">Lifetime billed</span><span class="num">${money(st.billed)}</span></div><div><span class="lab">Open balance</span><span class="num ${st.owed?'neg':''}">${money(st.owed)}</span></div><div><span class="lab">Jobs</span><span class="num">${st.js.length}</span></div></div>
+    <div class="actions"><button class="btn primary" data-act="newjob-for" data-id="${c.id}">New job</button><button class="btn" data-act="custedit" data-id="${c.id}">Edit customer</button></div>
+    <div class="contact"><button class="btn" data-act="call" data-id="${c.id}">Call</button><button class="btn" data-act="text" data-id="${c.id}">Text</button></div>
+    <div class="officeline">Calls and texts go out from the office line, ${esc(state.officePhone)}</div>
+  </div>
+  <section class="panel"><h2>Contact</h2><dl class="dl"><dt>Phone</dt><dd>${esc(c.phone)}</dd><dt>Email</dt><dd>${esc(c.email)}</dd><dt>Service address</dt><dd>${esc(c.address)}</dd><dt>Billing address</dt><dd>${esc(c.billing||'Same as service address')}</dd>${c.access?`<dt>Access notes</dt><dd>${esc(c.access)}</dd>`:''}<dt>Lead source</dt><dd>${esc(c.source)}</dd></dl></section>
+  <section class="panel"><div class="panel-head"><h2>Membership</h2>${c.parentId?'':`<button class="btn slim" data-act="mem-add" data-id="${c.id}">Add membership</button>`}</div>
+    ${mems.length?mems.map(memCard).join(''):parentMem?`<p class="sub">Covered by ${esc(cust(c.parentId).name)}'s ${esc(planOf(parentMem.planId).name)}. ${planOf(parentMem.planId).discount}% off applies to jobs here.</p>`:`<p class="sub">Not a member yet. A plan brings them back every year and gives you a reason to see all their equipment.</p>`}</section>
+  ${locs.length?`<section class="panel"><div class="panel-head"><h2>Locations</h2><button class="btn slim" data-act="loc-edit" data-id="${c.id}">Add location</button></div><p class="sub small">${locs.length} buildings, ${(c.equipment||[]).length} pieces of equipment. Tap a building to see its equipment and visits.</p>
+    ${locs.map(l=>{const es=eqOf(c,null,l.id),lv=locVisits(l.id),od=lv.filter(x=>visitStatus(x.v)==='overdue').length,nx=lv.filter(x=>['due','overdue','scheduled'].includes(visitStatus(x.v))).sort((a,b)=>a.v.due.localeCompare(b.v.due))[0];
+      return `<details class="loc"><summary><span><strong>${esc(l.name)}</strong><br><span class="muted small">${esc(l.address)}</span></span><span class="meta" style="margin-top:0;justify-content:flex-end"><span>${es.length} units</span>${od?`<span class="pill bad">${od} overdue</span>`:nx?`<span class="pill ${visitStatus(nx.v)==='scheduled'?'progress':''}">${visitStatus(nx.v)==='scheduled'?'Scheduled':'Next '+fmtDate(nx.v.due)}</span>`:''}</span></summary>
+      <div class="locbody">${es.length?es.map(e=>eqCard(e,c.id)).join(''):`<div class="empty">No equipment recorded at this building.</div>`}
+      <div class="row" style="margin-top:8px">${TK.map(k=>`<button class="btn slim" data-act="eq-new" data-id="${c.id}" data-v="${k}" data-l="${l.id}">Add ${TR[k].name}</button>`).join('')}</div>
+      ${lv.length?`<h3 style="margin-top:14px">Plan visits</h3>`+lv.map(x=>visitRow(x.m,x.v)).join(''):''}
+      <div class="actions"><button class="btn primary slim" data-act="newjob-for" data-id="${c.id}" data-l="${l.id}">New job here</button><button class="btn slim" data-act="loc-edit" data-id="${c.id}" data-v="${l.id}">Edit building</button></div></div></details>`}).join('')}</section>`:eqPanel(c,null)}
+  ${c.parentId?'':`<section class="panel"><div class="panel-head"><h2>Sub-accounts</h2><button class="btn slim" data-act="sub-add" data-id="${c.id}">Add sub-account</button></div>
+    ${subs.length?subs.map(k=>{const ks=custStats(k.id);return `<button class="invrow" data-act="open-cust" data-id="${k.id}"><span><strong>${esc(k.name)}</strong><br><span class="muted small">${esc(k.unit||'Tenant')}, ${esc(k.address)}</span><br><span class="meta" style="margin-top:4px"><span class="pill">${k.billTo==='parent'?'Bills to '+esc(first(c.name)):'Tenant pays'}</span><span>${(k.equipment||[]).length} equipment</span><span>${ks.js.length} jobs</span></span></span><span class="num" style="font-size:18px;text-align:right">${ks.next?fmtDate(ks.next.date):''}</span></button>`}).join(''):`<p class="sub small">For renters or tenants at properties this customer owns or manages. Each gets their own contact info, equipment, and job history, and you choose who gets the bill.</p>`}</section>`}
+  ${siteTrades.map(k=>`<section class="panel" style="border-left:6px solid ${TR[k].color}"><div class="panel-head"><h2>${TR[k].name} site details</h2><button class="btn slim" data-act="csite" data-id="${c.id}" data-v="${k}">Edit</button></div>${siteDl(c,k)}</section>`).join('')}
+  ${addable.length?`<div class="row" style="margin-top:10px">${addable.map(k=>`<button class="btn slim" data-act="csite" data-id="${c.id}" data-v="${k}">Add ${TR[k].name} site details</button>`).join('')}</div>`:''}
+  <section class="panel"><h2>Upcoming jobs</h2>${up.length?up.map(j=>`<div class="muted small" style="margin-top:8px">${dayLabel(j.date)}</div>`+jobRow(j)).join(''):`<div class="empty">Nothing scheduled.</div>`}</section>
+  <section class="panel"><h2>Job history</h2>${past.length?past.map(histRow).join(''):`<div class="empty">No completed jobs yet.</div>`}</section>
+  <section class="panel"><div class="panel-head"><h2>Texts</h2><button class="btn slim" data-act="text" data-id="${c.id}">Open</button></div><div class="bubbles" style="max-height:none">${ms.length?ms.map(m=>`<div class="bub ${m.dir}">${esc(m.text)}<span class="ts">${stampLabel(m.at)}</span></div>`).join(''):'<div class="bub sys">No messages yet</div>'}</div></section>
+  <section class="panel"><h2>Follow-ups</h2>${fu.length?`<dl class="dl">${fu.map(f=>`<dt>${fmtDate(f.date)}</dt><dd>${esc(f.label)}</dd>`).join('')}</dl>`:`<div class="empty">No reminders scheduled.</div>`}</section>`;
+}
+
+/* ---------- reports ---------- */
+function viewReports(){
+  const from=addDays(today(),-ui.period),js=state.jobs.filter(j=>j.invoice&&j.invoice.date>=from);
+  const sum=a=>a.reduce((s,j)=>{const n=nums(j);s.b+=n.billed;s.l+=n.labor;s.p+=n.parts;s.h+=n.hours;s.c++;return s},{b:0,l:0,p:0,h:0,c:0});
+  const paidH=tid=>state.punches.filter(p=>(!tid||p.techId===tid)&&p.in.slice(0,10)>=from).reduce((s,p)=>s+punchHours(p),0);
+  const payroll=state.techs.reduce((s,t)=>s+paidH(t.id)*t.rate,0);
+  const T=sum(js),gp=T.b-T.l-T.p;
+  let h=`<h1>Reports</h1><p class="sub">What each job and tech billed compared with what they cost you.</p>
+  <div class="chips">${[7,30,90].map(p=>`<button class="chip ${ui.period===p?'on':''}" data-act="period" data-v="${p}">Last ${p} days</button>`).join('')}</div>
+  <section class="panel"><div class="muted small">Gross profit on jobs, last ${ui.period} days</div><div class="bigread"><span class="num ${gp<0?'neg':''}">${money(gp)}</span><span class="muted">${T.b?pct(gp/T.b):''} of ${money(T.b)} billed across ${T.c} jobs</span></div>
+  ${costBar(T.b,T.l,T.p)}${legend(T.b,T.l,T.p,`${r1(T.h)} job hr`)}
+  <div class="ratio">Total payroll from the time clock: <span class="num">${money(payroll)}</span>. You billed <span class="num">${money(payroll?T.b/payroll:0,2)}</span> for every $1.00 of payroll.</div></section>
+  <h2 style="margin-top:22px">Billed vs. paid, by technician</h2><p class="sub small">Paid is time clock hours times each tech's loaded hourly cost (wages, taxes, benefits), set in Settings. Billable time is job hours divided by clocked hours.</p>`;
+  state.techs.map(t=>({t,s:sum(js.filter(j=>j.techId===t.id)),ph:paidH(t.id)})).sort((a,b)=>(b.s.b-b.ph*b.t.rate)-(a.s.b-a.ph*a.t.rate)).forEach(({t,s,ph})=>{const paid=ph*t.rate,g=s.b-s.l-s.p;
+    h+=`<section class="panel" style="border-left:6px solid ${TR[t.trade].color}"><div class="panel-head"><h3>${esc(t.name)}</h3><span class="tag" style="--tc:${TR[t.trade].color}">${TR[t.trade].name}</span></div>
+    <div class="statgrid" style="margin-top:4px"><div><span class="lab">Billed</span><span class="num">${money(s.b)}</span></div><div><span class="lab">Paid (time clock)</span><span class="num">${money(paid)}</span></div><div><span class="lab">Clocked hours</span><span class="num">${r1(ph)}</span></div></div>
+    <div class="ratio">Bills <span class="num">${money(paid?s.b/paid:0,2)}</span> for every $1.00 you pay ${esc(first(t.name))}</div>
+    <div class="statgrid"><div><span class="lab">Jobs</span><span class="num">${s.c}</span></div><div><span class="lab">Job hours</span><span class="num">${r1(s.h)}</span></div><div><span class="lab">Billable time</span><span class="num">${ph?pct(s.h/ph):'–'}</span></div>
+    <div><span class="lab">Avg. ticket</span><span class="num">${s.c?money(s.b/s.c):'–'}</span></div><div><span class="lab">Parts cost</span><span class="num">${money(s.p)}</span></div><div><span class="lab">Job gross profit</span><span class="num ${g<0?'neg':''}">${money(g)}</span></div></div></section>`});
+  h+=`<h2 style="margin-top:22px">By trade</h2><section class="panel" style="padding-top:6px"><div class="tablewrap"><table><thead><tr><th>Trade</th><th class="r">Jobs</th><th class="r">Billed</th><th class="r">Labor</th><th class="r">Parts</th><th class="r">Profit</th><th class="r">Margin</th></tr></thead><tbody>
+  ${TK.map(k=>{const s=sum(js.filter(j=>j.trade===k)),g=s.b-s.l-s.p;return `<tr><td><span class="tag" style="--tc:${TR[k].color}">${TR[k].name}</span></td><td class="r">${s.c}</td><td class="r">${money(s.b)}</td><td class="r">${money(s.l)}</td><td class="r">${money(s.p)}</td><td class="r ${g<0?'neg':''}"><strong>${money(g)}</strong></td><td class="r">${s.b?pct(g/s.b):'–'}</td></tr>`}).join('')}</tbody></table></div></section>`;
+  const unpaid=state.jobs.filter(j=>j.status==='invoiced').map(j=>{const due=addDays(j.invoice.date,TERMS[j.invoice.terms].d);return{j,due,late:daysBetween(due,today()),amt:balance(j)}}).sort((a,b)=>a.due.localeCompare(b.due)),owed=unpaid.reduce((s,u)=>s+u.amt,0);
+  const pays=state.jobs.flatMap(j=>((j.invoice&&j.invoice.payments)||[]).filter(p=>p.date>=from)),byM={};pays.forEach(p=>{byM[p.method]=byM[p.method]||{n:0,a:0,f:0};byM[p.method].n++;byM[p.method].a+=p.amount;byM[p.method].f+=p.fee||0});
+  const pTot=pays.reduce((x,p)=>x+p.amount,0),fTot=pays.reduce((x,p)=>x+(p.fee||0),0);
+  h+=`<h2 style="margin-top:22px">Payments collected</h2><section class="panel" style="padding-top:6px"><div class="tablewrap"><table><thead><tr><th>Method</th><th class="r">Payments</th><th class="r">Collected</th><th class="r">Est. fees</th></tr></thead><tbody>${Object.entries(byM).sort((a,b)=>b[1].a-a[1].a).map(([k,v])=>`<tr><td>${esc(PM[k])}</td><td class="r">${v.n}</td><td class="r">${money(v.a)}</td><td class="r">${money(v.f)}</td></tr>`).join('')}</tbody></table></div><div class="total"><strong>Collected, last ${ui.period} days</strong><span class="num">${money(pTot)}</span></div><p class="sub small" style="margin-top:6px">Estimated processing fees: ${money(fTot)} (${pTot?pct(fTot/pTot):'0%'} of collections).</p></section>`;
+  h+=`<h2 style="margin-top:22px">Unpaid invoices</h2><section class="panel" style="padding-top:6px">${unpaid.length?`<div class="tablewrap"><table><thead><tr><th>Customer</th><th>Terms</th><th>Due</th><th class="r">Amount</th></tr></thead><tbody>
+  ${unpaid.map(u=>`<tr><td><button class="back" style="padding:0;color:var(--hvac)" data-act="open-invoice" data-id="${u.j.id}">${esc(cust(u.j.customerId).name)}</button></td><td>${TERMS[u.j.invoice.terms].l}</td><td>${u.late>0?`<span class="pill bad">${u.late} days late</span>`:fmtDate(u.due)}</td><td class="r">${money(u.amt,2)}</td></tr>`).join('')}
+  </tbody></table></div><div class="total"><strong>Total outstanding</strong><span class="num">${money(owed,2)}</span></div>`:`<div class="empty">Every invoice is paid.</div>`}</section>`;
+  const fu=state.followups.filter(f=>f.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  h+=`<h2 style="margin-top:22px">Upcoming follow-ups</h2><section class="panel" style="padding-top:6px">${fu.length?`<div class="tablewrap"><table><thead><tr><th>Customer</th><th>Reminder</th><th>Send on</th></tr></thead><tbody>${fu.map(f=>`<tr><td>${esc(cust(f.customerId).name)}</td><td><span class="tag" style="--tc:${TR[f.trade].color}">${esc(f.label)}</span></td><td>${fmtDate(f.date)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">No follow-ups scheduled.</div>`}</section>`;
+  return h;
+}
+
+/* ---------- sheets ---------- */
+function sheetWrap(title,body){return `<div class="scrim" data-act="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheet-head"><h2 style="margin:0">${esc(title)}</h2><button class="btn slim" data-act="close-sheet">Close</button></div>${body}</div></div>`}
+function pickList(){const s=ui.sheet,j=job(s.id),q=(s.q||'').toLowerCase(),items=state.pricebook.filter(p=>p.trade===j.trade&&(!q||(p.name+' '+p.includes).toLowerCase().includes(q)));
+  return items.length?items.map(p=>{const l=j.tasks.find(x=>x.id===p.id);return `<button class="pick" data-act="pick" data-id="${p.id}"><span><strong>${esc(p.name)}</strong><br><span class="muted small">${esc(p.includes)}</span>${l?`<br><span class="cnt">On this job: ${l.qty}</span>`:''}</span><span class="price num">${money(p.price)}</span></button>`}).join(''):`<div class="empty">No ${TR[j.trade].name} tasks match. Add them in the price book.</div>`}
+function invPickList(){const s=ui.sheet,j=job(s.id),q=(s.q||'').toLowerCase();const it=state.inventory.filter(i=>!q||(i.name+' '+i.sku).toLowerCase().includes(q)).sort((a,b)=>(a.trade===j.trade?0:1)-(b.trade===j.trade?0:1));
+  return it.length?it.map(i=>{const m=j.materials.find(x=>x.itemId===i.id);return `<button class="pick" data-act="usepart" data-id="${i.id}"><span><strong>${esc(i.name)}</strong><br><span class="muted small">${esc(i.sku)}, ${i.onHand} on hand, ${money(i.cost,2)} each</span>${m?`<br><span class="cnt">On this job: ${m.qty}</span>`:''}</span><span class="tag" style="--tc:${TR[i.trade].color}">${TR[i.trade].name}</span></button>`}).join(''):`<div class="empty">No parts match.</div>`}
+function thread(cid){const ms=state.messages.filter(m=>m.customerId===cid);return ms.length?ms.map(m=>`<div class="bub ${m.dir}">${esc(m.text)}<span class="ts">${m.dir==='out'?esc(m.by||'Office')+', ':''}${stampLabel(m.at)}</span></div>`).join(''):`<div class="bub sys">No messages yet</div>`}
+function omwText(j,eta){const c=cust(j.customerId);return `Hi ${first(c.name)}, this is ${first(tech(j.techId).name)} with ${state.company}. I'm on my way and should arrive in about ${eta} minutes.`}
+function renderSheet(){
+  const el=$('#sheet'),s=ui.sheet;if(!s){el.innerHTML='';return}
+  let h='';
+  if(s.type==='picker'){const j=job(s.id);h=sheetWrap(`${TR[j.trade].name} price book`,`<label class="sr" for="pickq">Search tasks</label><input id="pickq" type="search" placeholder="Search tasks" value="${esc(s.q||'')}" data-inp="pickq"><div id="picklist" style="margin-top:6px">${pickList()}</div><button class="btn primary block" style="margin-top:12px" data-act="close-sheet">Done</button>`)}
+  if(s.type==='invpick'){h=sheetWrap('Add part from inventory',`<p class="sub small">Tap a part to use one from stock. Tap again to add more.</p><label class="sr" for="ipq">Search parts</label><input id="ipq" type="search" placeholder="Search parts or SKU" value="${esc(s.q||'')}" data-inp="ipq"><div id="iplist" style="margin-top:6px">${invPickList()}</div><button class="btn primary block" style="margin-top:12px" data-act="close-sheet">Done</button>`)}
+  if(s.type==='parts')h=sheetWrap('Flag job: needs parts',`<p class="sub">The job moves to Waiting on parts and the office sees it at the top of the schedule.</p><label class="f" for="partsText">What parts are needed?</label><textarea id="partsText" placeholder="Part numbers, sizes, quantity, and supplier if known"></textarea><button class="btn primary block" style="margin-top:14px" data-act="flag-parts" data-id="${s.id}">Flag job</button>`);
+  if(s.type==='resched'){const j=job(s.id);h=sheetWrap('Reschedule job',`<div class="grid2"><div><label class="f" for="rsDate">Date</label><input id="rsDate" type="date" data-chg="rscheck" value="${j.date<today()?today():j.date}"></div><div><label class="f" for="rsTime">Arrival time</label><input id="rsTime" type="time" data-chg="rscheck" value="${j.time}"></div></div>
+    <div class="grid2"><div><label class="f" for="rsDur">Arrival window</label><select id="rsDur" data-chg="rscheck">${DURS.map(([v,l])=>`<option value="${v}" ${+v===(j.dur||3)?'selected':''}>${l}</option>`).join('')}</select></div><div><label class="f" for="rsTech">Tech</label><select id="rsTech" data-chg="rscheck">${state.techs.map(t=>`<option value="${t.id}" ${t.id===j.techId?'selected':''}>${esc(t.name)} (${TR[t.trade].name})</option>`).join('')}<option value="" ${!j.techId?'selected':''}>Unassigned</option></select></div></div><div id="rsWarn"></div>
+    <label class="toggle"><input type="checkbox" id="rsText" checked> Text the customer the new time</label>
+    <button class="btn primary block" style="margin-top:14px" data-act="save-resched" data-id="${j.id}">Save new time</button>`)}
+  if(s.type==='omw'){const j=job(s.id);h=sheetWrap('On my way',`<label class="f" for="eta">Arriving in</label><select id="eta" data-chg="eta" data-id="${j.id}">${[15,20,30,45,60].map(m=>`<option value="${m}" ${m===(s.eta||30)?'selected':''}>${m} minutes</option>`).join('')}</select>
+    <h3 style="margin-top:14px">Text to ${esc(cust(j.customerId).phone)}</h3><div class="bubbles"><div class="bub out" id="omwPrev">${esc(omwText(j,s.eta||30))}<span class="ts">From ${esc(state.officePhone)}</span></div></div>
+    <button class="btn primary block" data-act="send-omw" data-id="${j.id}">Send text and mark on the way</button>`)}
+  if(s.type==='text'){const c=cust(s.id);h=sheetWrap(`Text ${c.name}`,`<p class="sub small">To ${esc(c.phone)} from the office line ${esc(state.officePhone)}. Replies come back here for everyone on the team.</p><div class="bubbles" id="thread">${thread(c.id)}</div>
+    <label class="sr" for="msgText">Message</label><textarea id="msgText" placeholder="Type a message" style="min-height:70px"></textarea><button class="btn primary block" style="margin-top:10px" data-act="send-text" data-id="${c.id}">Send text</button>`)}
+  if(s.type==='call'){const c=cust(s.id);h=sheetWrap(`Call ${c.name}`,`<p>Your phone rings first. When you answer, it connects you to ${esc(c.phone)}.</p><div class="callout">${esc(first(c.name))} sees the office number, <strong>${esc(state.officePhone)}</strong>, not your cell.</div>
+    <button class="btn primary block" style="margin-top:14px" data-act="start-call" data-id="${c.id}">Call from office line</button><p class="sub small" style="margin-top:10px">In the prototype this only logs the call. The real app would connect through a business phone service.</p>`)}
+  if(s.type==='complete'){const j=job(s.id),c=cust(j.customerId),n=nums(j),open=CHECK[j.trade].filter((_,i)=>!j.checklist[i]).length;
+    if(!j.tasks.length)h=sheetWrap('Complete job',`<p>Add at least one flat-rate task before completing this job.</p><button class="btn primary block" data-act="close-sheet">OK</button>`);
+    else if(open)h=sheetWrap('Complete job',`<p>Finish the ${TR[j.trade].name} checklist first. ${open} item${open>1?'s are':' is'} still open.</p><button class="btn primary block" data-act="close-sheet">Back to checklist</button>`);
+    else if(!j.summary.trim())h=sheetWrap('Complete job',`<p>Write the job summary first. It goes to the customer with the invoice.</p><button class="btn primary block" data-act="close-sheet">Back to job</button>`);
+    else h=sheetWrap('Complete job',`<dl class="dl"><dt>Customer</dt><dd>${esc(c.name)}</dd><dt>Invoice total</dt><dd class="num" style="font-size:22px">${money(n.billed,2)}</dd><dt>Gross profit</dt><dd>${money(n.gp)} (${pct(n.gp/n.billed)})</dd></dl>
+      <label class="f" for="cterms">Payment terms</label><select id="cterms">${Object.entries(TERMS).map(([k,v])=>`<option value="${k}" ${c.terms===k?'selected':''}>${v.l}</option>`).join('')}</select>
+      ${eqOf(c,j.trade).length?'':`<div class="callout warn" style="margin-top:12px">No ${TR[j.trade].name} equipment is on file for this customer yet. <button class="btn slim" style="margin-left:4px" data-act="eq-new" data-id="${c.id}" data-v="${j.trade}">Add it now</button></div>`}
+      <p class="sub small" style="margin-top:12px">Completing emails the invoice and job summary to ${esc(c.email||'the customer')}, ${state.qbo.connected?'syncs the invoice to QuickBooks Online, ':''}sends a Google review request, and schedules the next ${TR[j.trade].name} reminder.</p>
+      <button class="btn primary block" style="margin-top:12px" data-act="confirm-complete" data-id="${j.id}">Complete and send invoice</button>`)}
+  if(s.type==='done'){const j=job(s.id),c=cust(j.customerId),f=state.followups.find(x=>x.jobId===j.id);
+    h=sheetWrap('Job complete',`<p>Invoice <strong>${esc(j.invoice.num)}</strong> and job summary emailed for <strong>${money(nums(j).billed,2)}</strong>, ${TERMS[j.invoice.terms].l}.${j.invoice.qbo?' Synced to QuickBooks Online.':''}${state.ghl.connected?' GoHighLevel pipeline updated to Job complete.':''}</p>
+    <h3 style="margin-top:14px">Review request sent</h3><div class="email"><div class="muted small">To: ${esc(c.email)}<br>Subject: Thanks for choosing ${esc(state.company)}</div><p>Hi ${esc(first(c.name))},</p><p>Thanks for having ${esc(first(tech(j.techId).name))} out for your ${TR[j.trade].name==='HVAC'?'HVAC':TR[j.trade].name.toLowerCase()} service. If we did a good job, would you leave us a quick Google review? It takes a minute and helps a local business a lot.</p><a class="reviewbtn" href="${esc(state.reviewLink)}" target="_blank" rel="noopener">Leave a Google review</a></div>
+    ${f?`<h3 style="margin-top:14px">Follow-up scheduled</h3><p class="sub">${esc(f.label)} on ${fmtDate(f.date)}</p>`:''}
+    <div class="actions">${balance(j)>0?`<button class="btn primary" data-act="pay" data-id="${j.id}">Take payment now</button>`:''}<button class="btn ${balance(j)>0?'':'primary'}" data-act="open-invoice" data-id="${j.id}">View invoice</button><button class="btn" data-act="go" data-go="schedule">Back to schedule</button></div>`)}
+  if(s.type==='emailinv'){const j=job(s.id),c=cust(j.customerId),n=nums(j),due=addDays(j.invoice.date,TERMS[j.invoice.terms].d);
+    h=sheetWrap('Email invoice and job summary',`<div class="email"><div class="mailbrand">${brandHead(false)}</div><div class="muted small">To: ${esc(billCust(c).email)}<br>Subject: Invoice ${esc(j.invoice.num)} from ${esc(state.company)}</div>
+    <p>Hi ${esc(first(c.name))},</p><p>Thank you for your business. Your invoice for ${money(n.billed,2)} is attached${j.status==='paid'?' and marked paid':`, ${TERMS[j.invoice.terms].l.toLowerCase()}${TERMS[j.invoice.terms].d?`, due ${fmtDate(due)}`:''}`}.</p>
+    <p><strong>Job summary</strong><br>${esc(j.summary)}</p>${j.recs?`<p><strong>Recommendations</strong><br>${esc(j.recs)}</p>`:''}
+    ${j.status==='paid'?'':'<span class="reviewbtn">Pay invoice online</span>'}<p class="muted small" style="margin-top:10px">Questions? Call or text ${esc(state.officePhone)}.</p></div>
+    <button class="btn primary block" style="margin-top:14px" data-act="send-inv" data-id="${j.id}">Send email</button>`)}
+  if(s.type==='site'){const j=job(s.id),c=cust(j.customerId),v=(c.site||{})[j.trade]||{};h=sheetWrap(`${TR[j.trade].name} site details`,SITE[j.trade].map(f=>fld('edsite',f.k,f.l,v[f.k]||'',f.t,f.o)).join('')+`<button class="btn primary block" style="margin-top:16px" data-act="save-site" data-id="${j.id}">Save site details</button>`)}
+  if(s.type==='eqedit'){const c=cust(s.cid),e=s.id?(c.equipment||[]).find(x=>x.id===s.id):{trade:s.trade,type:'',brand:'',model:'',serial:'',year:'',size:'',loc:'',extra:'',condition:'Good',notes:'',warranty:'',photo:''},q=EQ[e.trade];if(s.photo===undefined)s.photo=e.photo||'';
+    h=sheetWrap(`${s.id?'Edit':'Add'} ${TR[e.trade].name} equipment`,`<p class="sub small">Read it off the data plate. Snap a photo so the office can look up parts and warranty later.</p>
+    <label class="f" for="eqPhoto">Data plate photo</label><div class="eqphoto">${s.photo?`<img id="eqPrev" src="${s.photo}" alt="Data plate photo">`:`<span class="eqph" id="eqPrev">No photo yet</span>`}<label class="btn" style="display:inline-flex;align-items:center;cursor:pointer">${s.photo?'Retake photo':'Take or upload photo'}<input id="eqPhoto" type="file" accept="image/*" capture="environment" data-chg="eqphoto" class="sr"></label></div>
+    ${c.locations&&c.locations.length?fld('eq','locId','Building or location',e.locId||s.locId||'',null,c.locations.map(l=>[l.id,l.name])):''}
+    ${fld('eq','type','Equipment type',e.type,null,q.types)}
+    <div class="grid2">${fld('eq','brand','Brand',e.brand)}${fld('eq','model','Model number',e.model,'text',null,'autocapitalize="characters"')}</div>
+    <div class="grid2">${fld('eq','serial','Serial number',e.serial,'text',null,'autocapitalize="characters"')}${fld('eq','year','Year installed or made',e.year,'number',null,'inputmode="numeric" placeholder="From serial or sticker"')}</div>
+    <div class="grid2">${fld('eq','size',q.size,e.size,'text',null,`placeholder="${q.sizePh}"`)}${fld('eq','extra',q.extra.l,e.extra,null,q.extra.o)}</div>
+    <div class="grid2">${fld('eq','loc','Location on property',e.loc)}${fld('eq','condition','Condition',e.condition,null,COND)}</div>
+    ${fld('eq','warranty','Warranty expires',e.warranty,'date')}${fld('eq','notes','Notes',e.notes,'textarea',null,'placeholder="Issues found, parts replaced, anything the next tech should know"')}
+    <div class="actions"><button class="btn primary" data-act="eq-save">Save equipment</button>${s.id?`<button class="btn danger" data-act="eq-del">Delete</button>`:''}</div>`)}
+  if(s.type==='pbedit'){const p=s.id?pb(s.id):{name:'',includes:'',price:'',parts:'',hours:'',trade:ui.pbTrade,mode:'auto'};if(s.mode===undefined)s.mode=p.mode||'auto';
+    h=sheetWrap(s.id?'Edit task':`New ${TR[p.trade].name} task`,`<label class="f" for="pbName">Task name</label><input id="pbName" value="${esc(p.name)}">
+    <label class="f" for="pbInc">What's included (shows on the invoice)</label><input id="pbInc" value="${esc(p.includes)}">
+    <div class="grid2"><div><label class="f" for="pbParts">Parts cost</label><input id="pbParts" type="number" inputmode="decimal" step="0.01" min="0" value="${p.parts}" data-inp="pb"></div><div><label class="f" for="pbHours">Labor hours</label><input id="pbHours" type="number" inputmode="decimal" step="0.25" min="0" value="${p.hours}" data-inp="pb"></div></div>
+    <div class="callout" id="pbSuggest" style="margin-top:14px"></div>
+    <div class="seg" role="group" aria-label="Price type" style="margin-top:14px"><button class="${s.mode==='auto'?'on':''}" data-act="pbmode" data-v="auto">Use ${money(state.laborRate)}/hr formula</button><button class="${s.mode==='custom'?'on':''}" data-act="pbmode" data-v="custom">Set custom price</button></div>
+    <label class="f" for="pbPrice">Flat-rate price</label><input id="pbPrice" type="number" inputmode="decimal" step="1" min="0" value="${p.price}" data-inp="pb" ${s.mode==='auto'?'readonly style="background:var(--sunk)"':''}>
+    <div class="actions"><button class="btn primary" data-act="pbsave" data-id="${s.id||''}">Save task</button>${s.id?`<button class="btn danger" data-act="pbdel" data-id="${s.id}">Delete</button>`:''}</div>`)}
+  if(s.type==='invedit'){const i=s.id?item(s.id):{name:'',sku:'',trade:ui.invTrade in TR?ui.invTrade:'hvac',cost:'',onHand:0,reorder:2,loc:''};
+    h=sheetWrap(s.id?'Edit part':'Add part',`<label class="f" for="ivName">Part name</label><input id="ivName" value="${esc(i.name)}"><div class="grid2"><div><label class="f" for="ivSku">SKU or part number</label><input id="ivSku" value="${esc(i.sku)}"></div><div><label class="f" for="ivTrade">Trade</label><select id="ivTrade">${TK.map(k=>`<option value="${k}" ${i.trade===k?'selected':''}>${TR[k].name}</option>`).join('')}</select></div></div>
+    <div class="grid2"><div><label class="f" for="ivCost">Your cost each</label><input id="ivCost" type="number" inputmode="decimal" step="0.01" min="0" value="${i.cost}"></div><div><label class="f" for="ivLoc">Location</label><input id="ivLoc" value="${esc(i.loc)}" placeholder="Warehouse shelf or truck"></div></div>
+    <div class="grid2"><div><label class="f" for="ivOn">On hand</label><input id="ivOn" type="number" inputmode="numeric" step="1" value="${i.onHand}"></div><div><label class="f" for="ivRe">Reorder at</label><input id="ivRe" type="number" inputmode="numeric" step="1" min="0" value="${i.reorder}"></div></div>
+    ${s.id?`<label class="f" for="ivRecv">Received stock</label><div class="inlineadd" style="grid-template-columns:1fr auto"><input id="ivRecv" type="number" inputmode="numeric" min="1" step="1" placeholder="Quantity received"><button class="btn" data-act="inv-recv" data-id="${s.id}">Add to stock</button></div>`:''}
+    <div class="actions"><button class="btn primary" data-act="invsave" data-id="${s.id||''}">Save part</button>${s.id?`<button class="btn danger" data-act="invdel" data-id="${s.id}">Delete</button>`:''}</div>`)}
+  if(s.type==='settings'){if(s.logo===undefined)s.logo=state.logo||'';h=sheetWrap('Settings',`<h3>Your brand</h3><p class="sub small">Shows in the app header, on invoices, job summaries, payment links, and customer emails.</p>
+    <label class="f">Logo</label><div class="eqphoto"><div id="logoPrev" class="logoprev">${s.logo?`<img src="${s.logo}" alt="Logo preview">`:'<span class="muted small">No logo yet</span>'}</div><label class="btn" style="display:inline-flex;align-items:center;cursor:pointer">${s.logo?'Replace logo':'Upload logo'}<input type="file" accept="image/*" data-chg="logo" class="sr"></label>${s.logo?'<button class="btn slim danger" data-act="logo-rm">Remove</button>':''}</div>
+    <label class="f" for="stCo">Company name</label><input id="stCo" value="${esc(state.company)}">
+    <div class="grid2"><div><label class="f" for="stBrand">Brand color</label><input id="stBrand" type="color" value="${esc(state.brandColor||'#1F4A63')}" style="padding:4px;height:48px"></div><div><label class="f" for="stLic">License number</label><input id="stLic" value="${esc(state.license||'')}" placeholder="ROC 123456"></div></div>
+    <label class="f" for="stAddr">Business address</label><input id="stAddr" value="${esc(state.companyAddress||'')}"><label class="f" for="stWeb">Website</label><input id="stWeb" value="${esc(state.website||'')}" placeholder="alphahomeservices.com">
+    <h3 style="margin-top:18px">Card processing estimates</h3><p class="sub small">Used to show fees before you charge. Set these to match your processor's rates.</p>
+    <div class="grid2"><div><label class="f" for="stInPct">In person (%)</label><input id="stInPct" type="number" step="0.01" value="${state.fees.inPct}"></div><div><label class="f" for="stOnPct">Online and card on file (%)</label><input id="stOnPct" type="number" step="0.01" value="${state.fees.onPct}"></div></div>
+    <h3 style="margin-top:18px">Company</h3>
+    <div class="grid2"><div><label class="f" for="stPh">Office phone line</label><input id="stPh" type="tel" value="${esc(state.officePhone)}"></div><div><label class="f" for="stCsr">CSR name on notes and texts</label><input id="stCsr" value="${esc(state.csr)}"></div></div>
+    <label class="f" for="stRev">Google review link</label><input id="stRev" type="url" value="${esc(state.reviewLink)}"><p class="sub small" style="margin-top:4px">Find it in your Google Business Profile under Ask for reviews.</p>
+    <h3 style="margin-top:18px">Flat-rate pricing</h3><div class="grid2"><div><label class="f" for="stLab">Labor rate per hour</label><input id="stLab" type="number" inputmode="decimal" min="0" step="1" value="${state.laborRate}"></div><div><label class="f" for="stMk">Parts markup (%)</label><input id="stMk" type="number" inputmode="decimal" min="0" step="1" value="${state.partsMarkup}"></div></div><label class="f" for="stCard">Cover card fees in prices (%)</label><input id="stCard" type="number" inputmode="decimal" min="0" max="5" step="0.1" value="${state.cardCover}"><p class="sub small" style="margin-top:4px">Price = (labor hours × labor rate + parts cost with markup), then raised so ${state.cardCover}% of it covers card processing. Set to 0 to turn off. Tasks with a custom price aren't changed. Jobs already quoted keep their price.</p>
+    <label class="f" for="stTgt">Target margin (%)</label><input id="stTgt" type="number" min="1" max="95" value="${state.targetMargin}">
+    <h3 style="margin-top:18px">QuickBooks Online</h3><label class="toggle"><input type="checkbox" id="stQbo" ${state.qbo.connected?'checked':''}> Connected (simulated in the prototype)</label><p class="sub small" style="margin-top:4px">Customers, invoices, and payments sync automatically when connected.</p>
+    <h3 style="margin-top:18px">GoHighLevel</h3><label class="toggle"><input type="checkbox" id="stGhl" ${state.ghl.connected?'checked':''}> Connected (simulated in the prototype)</label><p class="sub small" style="margin-top:4px">New customers become GHL contacts, completed jobs update the pipeline, and GHL leads can land here as new jobs.</p>
+    <h3 style="margin-top:18px">Tech loaded labor cost</h3><p class="sub small">Hourly wage plus payroll taxes, workers' comp, and benefits. Drives job costing and billed vs. paid.</p>
+    ${state.techs.map(t=>`<div class="grid2"><div><label class="f" for="tn_${t.id}">Name</label><input id="tn_${t.id}" data-tname="${t.id}" value="${esc(t.name)}"></div><div><label class="f" for="tr_${t.id}">${TR[t.trade].name} cost per hour</label><input id="tr_${t.id}" data-trate="${t.id}" type="number" inputmode="decimal" step="0.5" min="0" value="${t.rate}"></div></div>`).join('')}
+    <button class="btn primary block" style="margin-top:16px" data-act="settings-save">Save settings</button>
+    <button class="btn danger block" style="margin-top:10px" data-act="reset">${ui.resetArm?'Tap again to erase everything and reload sample data':'Reset sample data'}</button>`)}
+  if(s.type==='pay'){const j=job(s.id),c=billCust(cust(j.customerId)),bal=balance(j),m=s.m||(c.type==='Commercial'?'ach':'tap'),amt=s.amt!=null?s.amt:bal,fee=cardFee(m,amt);s.m=m;
+    const hint={tap:"Hand the customer your phone, or hold their card or phone near the back of yours. No card reader needed.",reader:'Customer taps, inserts, or swipes on the Bluetooth card reader.',link:`Texts a secure payment link to ${esc(c.phone)} from ${esc(state.officePhone)} and emails it to ${esc(c.email)}. They can pay by card, Apple Pay, or bank.`,file:c.card?`Charges ${esc(c.card.brand)} ending ${esc(c.card.last4)}, expires ${esc(c.card.exp)}.`:'No card saved for this customer yet. Save one on their next card payment.',ach:'Customer pays from their bank account. Best for commercial accounts and large jobs, since the fee is capped.',check:'Record the check. Deposit it as usual; QuickBooks gets the payment.',cash:'Record cash collected on site.'}[m];
+    h=sheetWrap('Take payment',`<p class="sub">${esc(c.name)}, invoice ${esc(j.invoice.num)}</p><div class="bigread" style="margin-top:8px"><span class="num">${money(bal,2)}</span><span class="muted">balance due</span></div>
+    <label class="f" for="payAmt">Amount to collect</label><input id="payAmt" type="number" inputmode="decimal" step="0.01" min="0.01" value="${amt.toFixed(2)}" data-inp="payamt">
+    <h3 style="margin-top:14px">How are they paying?</h3><div class="paygrid">${Object.entries(PM).map(([k,l])=>`<button class="${m===k?'on':''}" data-act="paymeth" data-v="${k}" aria-pressed="${m===k}" ${k==='file'&&!c.card?'disabled':''}>${l}</button>`).join('')}</div>
+    <div class="callout" style="margin-top:10px">${hint}</div>
+    ${m==='check'?`<label class="f" for="payRef">Check number</label><input id="payRef" inputmode="numeric">`:''}
+    ${['tap','reader','link'].includes(m)?`<label class="toggle"><input type="checkbox" id="paySave" ${c.card?'':'checked'}> Save card on file for future jobs and membership renewals</label>`:''}
+    ${fee?`<p class="sub small" style="margin-top:10px">Estimated processing fee: <strong>${money(fee,2)}</strong>, already covered by the ${state.cardCover}% built into your prices. No fee is added for the customer.</p>`:''}
+    <button class="btn primary block" style="margin-top:14px" data-act="pay-go" data-id="${j.id}" ${m==='file'&&!c.card?'disabled':''}>${m==='link'?'Send payment link':m==='check'||m==='cash'?'Record '+money(amt,2)+' '+(m==='cash'?'cash':'check'):'Charge '+money(amt,2)}</button>
+    <p class="sub small" style="margin-top:8px">Prototype only. No real card is charged.</p>`)}
+  if(s.type==='memadd'){const c=cust(s.id),pl=planOf(s.plan||(c.type==='Commercial'?'pl4':'pl2')),subs=kids(c.id),locs=c.locations||[];s.plan=pl.id;
+    h=sheetWrap('Add membership',`<label class="f" for="mPlan">Plan</label><select id="mPlan" data-chg="memplan">${state.plans.map(p=>`<option value="${p.id}" ${p.id===pl.id?'selected':''}>${esc(p.name)}, ${money(p.price)} ${BILL[p.billing]}</option>`).join('')}</select>
+    <div class="callout" style="margin-top:10px">${esc(pl.desc)}<br><strong>${pl.visits.length} visit${pl.visits.length===1?'':'s'} per year, ${pl.discount}% off jobs.</strong></div>
+    <div class="grid2"><div><label class="f" for="mStart">Start date</label><input id="mStart" type="date" value="${today()}"></div><div><label class="f" for="mPrice">Custom price <span class="muted" style="font-weight:400">(optional)</span></label><input id="mPrice" type="number" inputmode="decimal" min="0" step="1" placeholder="${money(pl.price)}"></div></div>
+    ${locs.length?`<h3 style="margin-top:16px">Buildings covered</h3>${locs.map(l=>`<label class="toggle"><input type="checkbox" data-mloc="${l.id}" checked> ${esc(l.name)} <span class="muted small">(${eqOf(c,null,l.id).length} units)</span></label>`).join('')}`:''}
+    ${subs.length?`<label class="toggle" style="margin-top:14px"><input type="checkbox" id="mSubs" checked> Also cover ${subs.length} sub-accounts (tenants)</label>`:''}
+    <label class="toggle"><input type="checkbox" id="mAuto" checked> Auto-renew each year</label>
+    <p class="sub small" style="margin-top:10px">Visits are created for every ${locs.length?'building':'property'} covered, and the plan discount applies to their jobs automatically. ${state.qbo.connected?'The plan fee syncs to QuickBooks as a recurring invoice.':''}</p>
+    <button class="btn primary block" style="margin-top:12px" data-act="mem-save" data-id="${c.id}">Start membership</button>`)}
+  if(s.type==='memedit'){const m=state.memberships.find(x=>x.id===s.id),pl=planOf(m.planId);
+    h=sheetWrap('Edit agreement',`<p class="sub">${esc(cust(m.customerId).name)}, ${esc(pl.name)}</p><div class="grid2"><div><label class="f" for="meEnd">Ends</label><input id="meEnd" type="date" value="${m.end}"></div><div><label class="f" for="mePrice">Custom price</label><input id="mePrice" type="number" min="0" step="1" value="${m.price==null?'':m.price}" placeholder="${money(pl.price)} (plan price)"></div></div>
+    <label class="toggle"><input type="checkbox" id="meAuto" ${m.autoRenew?'checked':''}> Auto-renew each year</label>
+    <div class="actions"><button class="btn primary" data-act="mem-update" data-id="${m.id}">Save</button><button class="btn danger" data-act="mem-cancel" data-id="${m.id}">Cancel membership</button></div>`)}
+  if(s.type==='planedit'){const pl=s.id?planOf(s.id):{name:'',type:'residential',price:0,billing:'year',discount:10,freeDiag:false,desc:'',visits:[]};if(!s.visits)s.visits=JSON.parse(JSON.stringify(pl.visits));
+    h=sheetWrap(s.id?'Edit plan':'New plan or contract',`${fld('pl','name','Plan name',pl.name)}<div class="grid2">${fld('pl','type','Type',pl.type,null,[['residential','Residential'],['commercial','Commercial']])}${fld('pl','billing','Billing',pl.billing,null,[['year','Every year'],['month','Every month'],['once','One-time payment per year']])}</div>
+    <div class="grid2">${fld('pl','price','Price',pl.price,'number')}${fld('pl','discount','Discount on jobs (%)',pl.discount,'number')}</div>
+    <label class="toggle"><input type="checkbox" id="plDiag" ${pl.freeDiag?'checked':''}> Free diagnostics for members</label>
+    ${fld('pl','desc','What the customer gets',pl.desc,'textarea')}
+    <div class="grid2">${fld('pl','incHvac','HVAC units included (commercial)',pl.included?pl.included.hvac:'','number',null,'placeholder="Leave blank for no limit"')}${fld('pl','addon','Price per extra unit',pl.addonHvac||'','number')}</div>
+    <h3 style="margin-top:16px">Visits each year</h3><p class="sub small">Months after the start date. Each visit adds its price book services to the job at no charge.</p>
+    ${s.visits.map((v,i)=>`<div class="visitedit"><input data-pv="${i}" data-pk="label" value="${esc(v.label)}" placeholder="Visit name" aria-label="Visit name"><select data-pv="${i}" data-pk="mo" aria-label="Month">${[...Array(12)].map((_,k)=>`<option value="${k}" ${+v.mo===k?'selected':''}>Month ${k}</option>`).join('')}</select><select data-pv="${i}" data-pk="task" aria-label="Service">${state.pricebook.map(p=>`<option value="${p.id}" ${v.tasks[0]===p.id?'selected':''}>${TR[p.trade].name}: ${esc(p.name)}</option>`).join('')}</select><button class="btn slim danger" data-act="pv-del" data-v="${i}" aria-label="Remove visit">Remove</button></div>`).join('')}
+    <button class="btn slim" style="margin-top:8px" data-act="pv-add">Add visit</button>
+    <button class="btn primary block" style="margin-top:16px" data-act="plan-save" data-id="${s.id||''}">Save plan</button>`)}
+  if(s.type==='locedit'){const c=cust(s.id),l=s.v?locOf(c,s.v):{name:'',address:'',access:''};
+    h=sheetWrap(s.v?'Edit building':'Add location',`${fld('lo','name','Building or location name',l.name,'text',null,'placeholder="Library, Store #12, Unit B"')}${fld('lo','address','Address',l.address)}${fld('lo','access','Access notes',l.access||'','text',null,'placeholder="Who has keys, where to check in"')}
+    <button class="btn primary block" style="margin-top:16px" data-act="loc-save" data-id="${c.id}" data-v="${s.v||''}">Save location</button>`)}
+  if(s.type==='subadd'){const c=cust(s.id);h=sheetWrap('Add sub-account',`<p class="sub small">A renter or tenant at a property ${esc(c.name)} owns or manages.</p>${fld('sb','name','Tenant name',s.d?s.d.name:'')}
+    <div class="grid2">${fld('sb','phone','Phone','','tel')}${fld('sb','email','Email','','email')}</div>${fld('sb','address','Service address','')}${fld('sb','unit','Label','Tenant',null,['Tenant','Renter','Unit','Store','Office'])}
+    ${fld('sb','billTo','Who pays?','parent',null,[['parent','Bill '+c.name],['self','Tenant pays']])}${fld('sb','access','Access notes','')}
+    <button class="btn primary block" style="margin-top:16px" data-act="sub-save" data-id="${c.id}">Add sub-account</button>`)}
+  if(s.type==='csite'){const c=cust(s.id),v=(c.site||{})[s.trade]||{};h=sheetWrap(`${TR[s.trade].name} site details`,SITE[s.trade].map(f=>fld('edsite',f.k,f.l,v[f.k]||'',f.t,f.o)).join('')+`<button class="btn primary block" style="margin-top:16px" data-act="save-csite" data-id="${c.id}">Save site details</button>`)}
+  if(s.type==='custedit'){const c=s.id?cust(s.id):{name:'',type:'Residential',terms:'due',phone:'',email:'',address:'',billing:'',access:'',source:'Google'};
+    h=sheetWrap(s.id?'Edit customer':'Add customer',fld('ce','name','Name or company',c.name)+`<div class="grid2">${fld('ce','type','Customer type',c.type,null,['Residential','Commercial'])}${fld('ce','terms','Payment terms',c.terms,null,Object.entries(TERMS).map(([k,v])=>[k,v.l]))}</div>
+    <div class="grid2">${fld('ce','phone','Phone',c.phone,'tel')}${fld('ce','email','Email',c.email,'email')}</div>${fld('ce','address','Service address',c.address)}${fld('ce','billing','Billing address',c.billing,'text',null,'placeholder="Leave blank if same as service address"')}
+    ${c.parentId?fld('ce','billTo','Who pays?',c.billTo,null,[['parent','Bill '+cust(c.parentId).name],['self','Tenant pays']]):''}
+    ${fld('ce','access','Access notes',c.access)}${fld('ce','source','Lead source',c.source,null,['Google','Referral','Repeat customer','Facebook','Yard sign','Truck wrap','GoHighLevel','Other'])}
+    <button class="btn primary block" style="margin-top:16px" data-act="save-cust" data-id="${s.id||''}">Save customer</button>`)}
+  el.innerHTML=h;
+  if(s.type==='pbedit')pbSuggest();
+  if(s.type==='resched')rsCheck();
+  const th=$('#thread');if(th)th.scrollTop=th.scrollHeight;
+}
+function pbSuggest(){const el=$('#pbSuggest');if(!el)return;const parts=+$('#pbParts').value||0,hrs=+$('#pbHours').value||0,rate=avgRate(ui.sheet.id?pb(ui.sheet.id).trade:ui.pbTrade),tgt=state.targetMargin/100;
+  const labor=hrs*state.laborRate,pm=parts*(1+state.partsMarkup/100),cc=Math.round((labor+pm)*(cardUp()-1)*100)/100,formula=Math.round((labor+pm)*cardUp());
+  if(ui.sheet.mode==='auto')$('#pbPrice').value=formula;
+  const price=+$('#pbPrice').value||0,cost=parts+hrs*rate,m=price?(price-cost)/price:0;
+  el.innerHTML=`<strong>Formula price ${money(formula)}</strong><br>Labor ${hrs} hr × ${money(state.laborRate)} = ${money(labor,2)}<br>Parts ${money(parts,2)} + ${state.partsMarkup}% markup = ${money(pm,2)}${state.cardCover?`<br>Card fee coverage (${state.cardCover}%) = ${money(cc,2)}`:''}<br><span class="muted">Your real cost is ${money(cost,2)} (parts plus ${hrs} hr at ${money(rate)} tech pay), so this price leaves a <strong>${pct(m)}</strong> margin${m<tgt?`, under your ${state.targetMargin}% target`:''}.</span>`}
+function openSheet(s){ui.sheet=s;renderSheet();setTimeout(()=>{const f=document.querySelector('.sheet input[type=search],.sheet textarea');if(f&&!['done','settings','call','omw','emailinv'].includes(s.type))f.focus()},30)}
+function closeSheet(){ui.sheet=null;ui.resetArm=false;renderSheet()}
+
+/* ---------- render ---------- */
+function navKey(){return ['customer','members'].includes(view.name)?'customers':['job','invoice','intake'].includes(view.name)?'schedule':view.name}
+function render(){
+  const V={job:()=>viewJob(view.id),invoice:()=>viewInvoice(view.id),intake:viewIntake,clock:viewClock,pricebook:viewPricebook,inventory:viewInventory,reports:viewReports,schedule:viewSchedule,customers:viewCustomers,customer:()=>viewCustomer(view.id),members:viewMembers};
+  $('#app').innerHTML=(V[view.name]||viewSchedule)();
+  const wide=view.name==='schedule'&&ui.mode==='board';$('#app').classList.toggle('wide',wide);$('.top-in').style.maxWidth=wide?'1400px':'';
+  document.querySelectorAll('.nav button').forEach(b=>{const on=b.dataset.go===navKey();b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
+  $('#coName').innerHTML=(state.logo?`<img src="${state.logo}" alt="">`:'')+esc(state.company);document.documentElement.style.setProperty('--brand',state.brandColor||'#1F4A63');
+}
+function go(v){view=v;render();window.scrollTo(0,0)}
+function msg(cid,text,by){state.messages.push({customerId:cid,dir:'out',text,at:stamp(),by:by||state.csr})}
+
+/* ---------- actions ---------- */
+const ACT={
+  go:el=>{ui.sheet=null;renderSheet();go({name:el.dataset.go})},
+  newjob:()=>{intake=null;closeSheet();go({name:'intake'})},
+  'open-job':(el,id)=>{closeSheet();go({name:'job',id})},
+  'open-invoice':(el,id)=>{closeSheet();go({name:'invoice',id})},
+  ftrade:el=>{ui.trade=el.dataset.v;render()},
+  onlyparts:()=>{ui.onlyParts=!ui.onlyParts;render()},
+  day:el=>{ui.day=el.dataset.v;render()},
+  mode:el=>{ui.mode=el.dataset.v;render()},
+  slot:(el,id,e)=>{if(e.target!==el)return;const y=e.clientY-el.getBoundingClientRect().top,m=Math.min(BE*60-60,BS*60+Math.floor(y/PX*2)*30),tid=el.dataset.col;
+    intake=newDraft();intake.job.date=ui.day||today();intake.job.time=fromMin(m);intake.job.techId=tid||'none';if(tid)intake.trade=tech(tid).trade;go({name:'intake'});toast(`New job for ${tid?first(tech(tid).name):'Unassigned'} at ${fmtTimePlain(fromMin(m))}`)},
+  wk:el=>{ui.day=addDays(ui.day||today(),+el.dataset.v);render()},
+  wktoday:()=>{ui.day=today();render()},
+  omw:(el,id)=>openSheet({type:'omw',id,eta:30}),
+  'send-omw':(el,id)=>{const j=job(id),eta=+$('#eta').value;msg(j.customerId,omwText(j,eta),tech(j.techId).name);j.status='enroute';save();closeSheet();render();toast('Text sent. Job marked on the way')},
+  start:(el,id)=>{job(id).status='progress';save();render();toast('Job started')},
+  'need-parts':(el,id)=>openSheet({type:'parts',id}),
+  'flag-parts':(el,id)=>{const t=$('#partsText').value.trim();if(!t){toast('List the parts needed first');return}const j=job(id);j.status='parts';j.partsNeeded=t;save();closeSheet();render();toast('Flagged: waiting on parts')},
+  resched:(el,id)=>openSheet({type:'resched',id}),
+  'save-resched':(el,id)=>{const j=job(id),d=$('#rsDate').value,t=$('#rsTime').value;if(!d||!t){toast('Pick a date and time');return}
+    const cf=conflicts($('#rsTech').value,d,t,+$('#rsDur').value,id);if(cf.length&&!ui.sheet.okDouble){ui.sheet.okDouble=true;rsCheck();toast('That time double books this tech. Tap Save again to keep it.');return}
+    j.date=d;j.time=t;j.dur=+$('#rsDur').value;j.techId=$('#rsTech').value;if(j.status==='parts'){j.status='scheduled';j.partsNeeded=''}if(j.status==='enroute')j.status='scheduled';
+    if($('#rsText').checked)msg(j.customerId,`Hi ${first(cust(j.customerId).name)}, your ${state.company} appointment is now ${dayLabel(d)==='Today'||dayLabel(d)==='Tomorrow'?dayLabel(d).toLowerCase():fmtDate(d)} at ${fmtTimePlain(t)} with ${first(tech(j.techId).name)}. Reply here with any questions.`);
+    ui.day=d;save();closeSheet();render();toast('Rescheduled for '+fmtDate(d))},
+  picker:(el,id)=>openSheet({type:'picker',id,q:''}),
+  pick:(el,pid)=>{const j=job(ui.sheet.id),l=j.tasks.find(x=>x.id===pid);l?l.qty++:j.tasks.push({id:pid,qty:1,price:pb(pid).price});save();render();$('#picklist').innerHTML=pickList();toast('Added '+pb(pid).name)},
+  qty:(el,id)=>{const j=job(id),i=+el.dataset.i;j.tasks[i].qty+=+el.dataset.d;if(j.tasks[i].qty<=0)j.tasks.splice(i,1);save();render()},
+  invpick:(el,id)=>openSheet({type:'invpick',id,q:''}),
+  usepart:(el,iid)=>{const j=job(ui.sheet.id),it=item(iid);if(it.onHand<=0){toast(it.name+' is out of stock. Flag the job for parts instead.');return}
+    it.onHand--;const m=j.materials.find(x=>x.itemId===iid);m?m.qty++:j.materials.push({itemId:iid,name:it.name,cost:it.cost,qty:1});save();render();$('#iplist').innerHTML=invPickList();toast(`Used 1 ${it.name}. ${it.onHand} left`)},
+  'add-mat':(el,id)=>{const nm=$('#xpName').value.trim(),c=parseFloat($('#xpCost').value);if(!nm||!(c>=0)){toast('Enter a part name and cost');return}job(id).materials.push({name:nm,cost:c,qty:1});save();render();toast('Part added to this job')},
+  'rm-mat':(el,id)=>{const j=job(id),m=j.materials[+el.dataset.i];if(m.itemId&&item(m.itemId))item(m.itemId).onHand+=m.qty;j.materials.splice(+el.dataset.i,1);save();render();toast(m.itemId?'Removed and returned to stock':'Removed')},
+  'add-note':(el,id)=>{const t=$('#noteText').value.trim();if(!t){toast('Type a note first');return}job(id).notes.push({by:$('#noteBy').value,text:t,at:stamp()});save();render();toast('Private note added')},
+  call:(el,id)=>openSheet({type:'call',id}),
+  'start-call':(el,id)=>{state.messages.push({customerId:id,dir:'sys',text:'Call placed from the office line',at:stamp()});save();closeSheet();toast('Calling from '+state.officePhone+' (simulated)')},
+  text:(el,id)=>openSheet({type:'text',id}),
+  'send-text':(el,id)=>{const t=$('#msgText').value.trim();if(!t)return;msg(id,t);save();$('#thread').innerHTML=thread(id);$('#thread').scrollTop=1e6;$('#msgText').value='';toast('Text sent from '+state.officePhone)},
+  complete:(el,id)=>openSheet({type:'complete',id}),
+  'confirm-complete':(el,id)=>{const j=job(id),terms=$('#cterms').value,num=j.num.replace('J-','');
+    j.status='invoiced';j.invoice={num:'INV-'+num,date:today(),terms,showMaterials:true,paidDate:null,qbo:state.qbo.connected,emailed:true};
+    state.followups.push({id:uid('f'),customerId:j.customerId,trade:j.trade,jobId:j.id,date:addDays(today(),FOLLOW[j.trade].d),label:FOLLOW[j.trade].l});
+    save();render();openSheet({type:'done',id})},
+  'mark-paid':(el,id)=>{const j=job(id);j.status='paid';j.invoice.paidDate=today();save();render();toast(j.invoice.qbo?'Marked paid and synced to QuickBooks':'Marked paid')},
+  'email-inv':(el,id)=>openSheet({type:'emailinv',id}),
+  'send-inv':(el,id)=>{const j=job(id);j.invoice.emailed=true;save();closeSheet();render();toast('Invoice and job summary emailed to '+cust(j.customerId).email)},
+  'edit-site':(el,id)=>openSheet({type:'site',id}),
+  'save-site':(el,id)=>{const j=job(id),c=cust(j.customerId);c.site=c.site||{};c.site[j.trade]=c.site[j.trade]||{};document.querySelectorAll('[data-g="edsite"]').forEach(i=>c.site[j.trade][i.dataset.k]=i.value);save();closeSheet();render();toast('Site details saved')},
+  'clock-in':()=>{if(openPunch(ui.me))return;state.punches.push({id:uid('p'),techId:ui.me,in:stamp(),out:null});save();render();toast(first(tech(ui.me).name)+' clocked in')},
+  'clock-out':()=>{const p=openPunch(ui.me);if(!p)return;p.out=stamp();save();render();toast(`${first(tech(ui.me).name)} clocked out after ${r1(punchHours(p))} hr`)},
+  pbtrade:el=>{ui.pbTrade=el.dataset.v;render()},
+  pbedit:(el,id)=>openSheet({type:'pbedit',id}),
+  pbnew:()=>openSheet({type:'pbedit',id:null}),
+  'eq-new':(el,cid)=>openSheet({type:'eqedit',cid,trade:el.dataset.v,locId:el.dataset.l||null,id:null,back:ui.sheet&&ui.sheet.type==='complete'?ui.sheet.id:null}),
+  'eq-edit':(el,cid)=>openSheet({type:'eqedit',cid,id:el.dataset.v}),
+  'eq-save':()=>{const s2=ui.sheet,c=cust(s2.cid);c.equipment=c.equipment||[];const d={};document.querySelectorAll('.sheet [data-g="eq"]').forEach(i=>d[i.dataset.k]=i.value.trim());
+    if(!d.type){toast('Pick the equipment type');return}d.photo=s2.photo||'';if('locId' in d)d.locId=d.locId||null;
+    if(s2.id)Object.assign(c.equipment.find(x=>x.id===s2.id),d);else c.equipment.push(Object.assign({id:uid('eq'),trade:s2.trade,by:view.name==='job'?tech(job(view.id).techId).name:state.csr,at:today()},d));
+    try{save()}catch(x){}const back=s2.back;closeSheet();render();toast('Equipment saved to '+c.name);if(back)openSheet({type:'complete',id:back})},
+  'eq-del':()=>{const s2=ui.sheet,c=cust(s2.cid);c.equipment=c.equipment.filter(x=>x.id!==s2.id);save();closeSheet();render();toast('Equipment removed')},
+  pbmode:el=>{ui.sheet.mode=el.dataset.v;const v={name:$('#pbName').value,includes:$('#pbInc').value,parts:$('#pbParts').value,hours:$('#pbHours').value,price:$('#pbPrice').value};renderSheet();$('#pbName').value=v.name;$('#pbInc').value=v.includes;$('#pbParts').value=v.parts;$('#pbHours').value=v.hours;if(ui.sheet.mode==='custom')$('#pbPrice').value=v.price;pbSuggest()},
+  pbuse:el=>{$('#pbPrice').value=el.dataset.v;pbSuggest()},
+  pbsave:(el,id)=>{const name=$('#pbName').value.trim();if(!name){toast('Give the task a name');return}
+    const d={name,includes:$('#pbInc').value.trim(),price:+$('#pbPrice').value||0,parts:+$('#pbParts').value||0,hours:+$('#pbHours').value||0,mode:ui.sheet.mode};if(d.mode==='auto')d.price=calcPrice(d);
+    if(id)Object.assign(pb(id),d);else state.pricebook.push(Object.assign({id:uid('x'),trade:ui.pbTrade},d));save();closeSheet();render();toast('Task saved')},
+  pbdel:(el,id)=>{if(state.jobs.some(j=>j.tasks.some(t=>t.id===id))){toast('This task is on existing jobs, so it stays. Rename or reprice it instead.');return}state.pricebook=state.pricebook.filter(p=>p.id!==id);save();closeSheet();render();toast('Task deleted')},
+  invtrade:el=>{ui.invTrade=el.dataset.v;render()},
+  invedit:(el,id)=>openSheet({type:'invedit',id}),
+  invnew:()=>openSheet({type:'invedit',id:null}),
+  invsave:(el,id)=>{const name=$('#ivName').value.trim();if(!name){toast('Give the part a name');return}
+    const d={name,sku:$('#ivSku').value.trim(),trade:$('#ivTrade').value,cost:+$('#ivCost').value||0,loc:$('#ivLoc').value.trim(),onHand:parseInt($('#ivOn').value)||0,reorder:parseInt($('#ivRe').value)||0};
+    if(id)Object.assign(item(id),d);else state.inventory.push(Object.assign({id:uid('i')},d));save();closeSheet();render();toast('Part saved')},
+  'inv-recv':(el,id)=>{const q=parseInt($('#ivRecv').value);if(!(q>0)){toast('Enter the quantity received');return}const it=item(id);it.onHand+=q;save();render();openSheet({type:'invedit',id});toast(`Received ${q}. ${it.onHand} on hand`)},
+  invdel:(el,id)=>{state.inventory=state.inventory.filter(i=>i.id!==id);save();closeSheet();render();toast('Part deleted')},
+  period:el=>{ui.period=+el.dataset.v;render()},
+  settings:()=>openSheet({type:'settings'}),
+  'settings-save':()=>{state.company=$('#stCo').value.trim()||'Your Company';state.logo=ui.sheet.logo||'';state.brandColor=$('#stBrand').value;state.license=$('#stLic').value.trim();state.companyAddress=$('#stAddr').value.trim();state.website=$('#stWeb').value.trim();state.fees.inPct=+$('#stInPct').value||state.fees.inPct;state.fees.onPct=+$('#stOnPct').value||state.fees.onPct;state.officePhone=$('#stPh').value.trim()||state.officePhone;state.csr=$('#stCsr').value.trim()||state.csr;state.reviewLink=$('#stRev').value.trim();state.targetMargin=Math.min(95,Math.max(1,+$('#stTgt').value||60));state.qbo.connected=$('#stQbo').checked;state.ghl.connected=$('#stGhl').checked;const lr=+$('#stLab').value,mk=+$('#stMk').value,cc=+$('#stCard').value;if(lr>0)state.laborRate=lr;if(mk>=0)state.partsMarkup=mk;if(cc>=0&&cc<10)state.cardCover=cc;repriceAll();
+    document.querySelectorAll('[data-trate]').forEach(i=>tech(i.dataset.trate).rate=+i.value||0);document.querySelectorAll('[data-tname]').forEach(i=>{if(i.value.trim())tech(i.dataset.tname).name=i.value.trim()});
+    save();closeSheet();render();toast('Settings saved')},
+  reset:()=>{if(!ui.resetArm){ui.resetArm=true;renderSheet();return}state=seed();save();intake=null;ui.day=null;closeSheet();go({name:'schedule'});toast('Sample data restored')},
+  itrade:el=>{syncIntake();if(intake.trade!==el.dataset.v){intake.trade=el.dataset.v;intake.site={};intake.job.techId=''}render()},
+  isave:()=>{syncIntake();const d=intake;let cid=d.customerId;
+    if(cid==='new'){const c=d.cust;if(!c.name.trim()||!c.phone.trim()||!c.address.trim()){toast('Add the customer name, phone, and service address');return}}
+    if(!d.job.desc.trim()){toast('Describe the problem before creating the job');return}
+    let techId=d.job.techId||(state.techs.find(t=>t.trade===d.trade)||state.techs[0]).id;if(techId==='none')techId='';
+    const cf=conflicts(techId,d.job.date||today(),d.job.time||'08:00',+d.job.dur||3,null);
+    if(cf.length&&!d.okDouble){d.okDouble=true;$('#iWarn').innerHTML=`<div class="callout warn" style="margin-top:12px"><strong>${esc(first(tech(techId).name))} is already booked:</strong> ${esc(conflictText(cf))}. Change the time or tech, or tap Create again to double book.</div>`;toast('That time double books '+first(tech(techId).name));return}
+    if(cid==='new'){cid=uid('c');state.customers.push(Object.assign({id:cid,site:{}},JSON.parse(JSON.stringify(d.cust))))}
+    const c=cust(cid);c.site=c.site||{};c.site[d.trade]=Object.assign({},c.site[d.trade]||{},d.site);
+    const num=state.nextNum++,date=d.job.date||today();
+    const j={id:'j'+num,num:'J-'+num,customerId:cid,locId:d.job.locId||null,trade:d.trade,techId,date,time:d.job.time||'08:00',dur:+d.job.dur||3,status:'scheduled',desc:d.job.desc.trim(),locNote:d.job.loc.trim(),tasks:[],hours:null,materials:[],checklist:CHECK[d.trade].map(()=>false),partsNeeded:'',invoice:null,summary:'',recs:'',notes:d.job.note.trim()?[{by:state.csr,text:d.job.note.trim(),at:stamp()}]:[]};
+    state.jobs.push(j);ui.day=date;save();intake=null;go({name:'job',id:j.id});toast(`Job ${j.num} scheduled for ${fmtDate(date)}${d.customerId==='new'&&state.ghl.connected?', customer synced to GoHighLevel':''}`)},
+  'open-cust':(el,id)=>{closeSheet();go({name:'customer',id})},
+  custf:el=>{ui.custF=el.dataset.v;render()},
+  custnew:()=>openSheet({type:'custedit',id:null}),
+  custedit:(el,id)=>openSheet({type:'custedit',id}),
+  'save-cust':(el,id)=>{const d={};document.querySelectorAll('[data-g="ce"]').forEach(i=>d[i.dataset.k]=i.value.trim());if(!d.name||!d.phone||!d.address){toast('Add the name, phone, and service address');return}
+    if(id)Object.assign(cust(id),d);else{id=uid('c');state.customers.push(Object.assign({id,site:{}},d))}save();closeSheet();go({name:'customer',id});toast(state.ghl.connected?'Customer saved and synced to GoHighLevel':'Customer saved')},
+  csite:(el,id)=>openSheet({type:'csite',id,trade:el.dataset.v}),
+  'save-csite':(el,id)=>{const c=cust(id),k=ui.sheet.trade;c.site=c.site||{};c.site[k]=c.site[k]||{};document.querySelectorAll('[data-g="edsite"]').forEach(i=>c.site[k][i.dataset.k]=i.value);save();closeSheet();render();toast('Site details saved')},
+  'logo-rm':()=>{ui.sheet.logo='';renderSheet()},
+  pay:(el,id)=>openSheet({type:'pay',id,m:null,amt:null}),
+  paymeth:el=>{const a=parseFloat($('#payAmt').value);ui.sheet.amt=isFinite(a)?a:null;ui.sheet.m=el.dataset.v;renderSheet()},
+  'pay-go':(el,id)=>{const j=job(id),c=billCust(cust(j.customerId)),m=ui.sheet.m,amt=Math.round(parseFloat($('#payAmt').value)*100)/100,bal=balance(j);
+    if(!(amt>0)){toast('Enter an amount');return}if(amt>bal+0.001){toast('That is more than the balance of '+money(bal,2));return}
+    if(m==='link'){j.invoice.linkSent=today();j.invoice.linkAmt=amt;msg(j.customerId,`${state.company}: your invoice ${j.invoice.num} for ${money(amt,2)} is ready. Pay securely here: pay.example.com/${j.invoice.num}`);save();closeSheet();render();toast('Payment link texted and emailed');return}
+    if($('#paySave')&&$('#paySave').checked)c.card={brand:'Visa',last4:String(4000+Math.floor(Math.random()*5999)).slice(-4),exp:'09/29'};
+    const ref=$('#payRef')?$('#payRef').value.trim():'';recordPay(j,m,amt,ref);closeSheet();render();
+    toast(`${money(amt,2)} ${m==='cash'||m==='check'?'recorded':'approved'}${balance(j)>0?', '+money(balance(j),2)+' still due':', paid in full'}${j.invoice.qbo?'. Synced to QuickBooks':''}`)},
+  'sim-linkpay':(el,id)=>{const j=job(id);recordPay(j,'link',j.invoice.linkAmt||balance(j),'');render();toast('Customer paid online. Invoice updated and synced')},
+  'mem-add':(el,id)=>openSheet({type:'memadd',id}),
+  'mem-save':(el,id)=>{const c=cust(id),pl=planOf($('#mPlan').value),start=$('#mStart').value||today(),pr=$('#mPrice').value;
+    const locIds=[...document.querySelectorAll('[data-mloc]')].filter(x=>x.checked).map(x=>x.dataset.mloc);if(c.locations&&c.locations.length&&!locIds.length){toast('Pick at least one building');return}
+    const m={id:uid('m'),customerId:id,planId:pl.id,start,end:addDays(addMonths(start,12),-1),autoRenew:$('#mAuto').checked,coverSubs:!!($('#mSubs')&&$('#mSubs').checked),price:pr===''?null:+pr,cancelled:false};
+    m.targets=makeTargets(c,locIds,m.coverSubs);genVisits(m,()=>uid('v'));state.memberships.push(m);save();closeSheet();render();toast(`${shortPlan(pl)} membership started, ${m.visits.length} visits created`)},
+  'mem-edit':(el,id)=>openSheet({type:'memedit',id}),
+  'mem-update':(el,id)=>{const m=state.memberships.find(x=>x.id===id),pr=$('#mePrice').value;m.end=$('#meEnd').value||m.end;m.price=pr===''?null:+pr;m.autoRenew=$('#meAuto').checked;save();closeSheet();render();toast('Agreement updated')},
+  'mem-cancel':(el,id)=>{if(!ui.resetArm){ui.resetArm=true;el.textContent='Tap again to cancel';return}const m=state.memberships.find(x=>x.id===id);m.cancelled=true;save();closeSheet();render();toast('Membership cancelled')},
+  'mem-renew':(el,id)=>{const o=state.memberships.find(x=>x.id===id),start=addDays(o.end,1),m=Object.assign({},o,{id:uid('m'),start,end:addDays(addMonths(start,12),-1),targets:o.targets.map(t=>Object.assign({},t))});genVisits(m,()=>uid('v'));o.renewedTo=m.id;state.memberships.push(m);save();render();toast(`Renewed through ${fmtDate(m.end)}. ${state.qbo.connected?'Renewal invoice synced to QuickBooks.':''}`)},
+  'visit-sched':(el,mid,e)=>{const m=state.memberships.find(x=>x.id===mid),v=m.visits.find(x=>x.id===el.dataset.v),j=visitJob(m,v);closeSheet();go({name:'job',id:j.id});openSheet({type:'resched',id:j.id});toast('Visit job created. Pick the tech and time.')},
+  'visit-all':(el,mid)=>{const m=state.memberships.find(x=>x.id===mid),vi=+el.dataset.v,vs=m.visits.filter(v=>v.vi===vi&&['due','overdue'].includes(visitStatus(v)));vs.forEach(v=>visitJob(m,v));save();ui.day=vs[0]?(vs[0].due<today()?today():vs[0].due):ui.day;render();toast(`${vs.length} visit jobs created as unassigned on ${fmtDate(ui.day)}. Drag them onto techs from the schedule board.`)},
+  'plan-edit':(el,id)=>openSheet({type:'planedit',id}),
+  'plan-new':()=>openSheet({type:'planedit',id:null}),
+  'pv-add':()=>{syncPv();ui.sheet.visits.push({mo:0,trade:'hvac',label:'',tasks:['h4']});keepPlanFields()},
+  'pv-del':el=>{syncPv();ui.sheet.visits.splice(+el.dataset.v,1);keepPlanFields()},
+  'plan-save':(el,id)=>{syncPv();const d={};document.querySelectorAll('.sheet [data-g="pl"]').forEach(i=>d[i.dataset.k]=i.value.trim());if(!d.name){toast('Name the plan');return}
+    const pl=id?planOf(id):{id:uid('pl')};Object.assign(pl,{name:d.name,type:d.type||'residential',billing:d.billing||'year',price:+d.price||0,discount:+d.discount||0,desc:d.desc,freeDiag:$('#plDiag').checked,visits:ui.sheet.visits.filter(v=>v.label.trim())});
+    if(d.incHvac!==''){pl.included={hvac:+d.incHvac,wh:+d.incHvac};pl.addonHvac=pl.addonWh=+d.addon||0}else delete pl.included;if(!id)state.plans.push(pl);save();closeSheet();render();toast('Plan saved')},
+  'loc-edit':(el,id)=>openSheet({type:'locedit',id,v:el.dataset.v||null}),
+  'loc-save':(el,id)=>{const c=cust(id),d={};document.querySelectorAll('.sheet [data-g="lo"]').forEach(i=>d[i.dataset.k]=i.value.trim());if(!d.name||!d.address){toast('Add the building name and address');return}
+    c.locations=c.locations||[];if(el.dataset.v)Object.assign(locOf(c,el.dataset.v),d);else c.locations.push(Object.assign({id:uid('L')},d));save();closeSheet();render();toast('Location saved')},
+  'sub-add':(el,id)=>openSheet({type:'subadd',id}),
+  'sub-save':(el,id)=>{const p=cust(id),d={};document.querySelectorAll('.sheet [data-g="sb"]').forEach(i=>d[i.dataset.k]=i.value.trim());if(!d.name||!d.address){toast('Add the tenant name and service address');return}
+    const k=Object.assign({id:uid('c'),parentId:id,type:'Residential',billing:'',terms:d.billTo==='parent'?p.terms:'due',source:p.name+' tenant',site:{},equipment:[]},d);state.customers.push(k);save();closeSheet();render();toast(`${k.name} added under ${p.name}${state.ghl.connected?', synced to GoHighLevel':''}`)},
+  'newjob-for':(el,id)=>{intake=newDraft();intake.customerId=id;intake.job.locId=el.dataset.l||'';closeSheet();go({name:'intake'})},
+  'close-sheet':(el,id,e)=>{if(el.classList.contains('scrim')&&e.target!==el)return;closeSheet()}
+};
+function recordPay(j,m,amt,ref){j.invoice.payments=j.invoice.payments||[];j.invoice.payments.push({id:uid('pay'),date:today(),method:m,amount:amt,ref,fee:cardFee(m,amt)});if(balance(j)<=0.004){j.status='paid';j.invoice.paidDate=today()}save()}
+function shrinkLogo(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,480/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);cb(cv.toDataURL('image/png'))};im.onerror=()=>toast('That file could not be read as an image');im.src=r.result};r.readAsDataURL(file)}
+function visitJob(m,v){const pl=planOf(m.planId),c=cust(v.cid),num=state.nextNum++;
+  const units=Math.max(1,eqOf(c,'hvac',v.locId||undefined).filter(e=>!HVAC_SKIP.includes(e.type)).length);
+  const tasks=v.tasks.map(t=>({id:t,qty:pb(t)&&pb(t).trade==='hvac'&&/tune-up/i.test(pb(t).name)?units:1,incl:true}));
+  const hrs=tasks.reduce((x,l)=>x+(pb(l.id)?pb(l.id).hours*l.qty:0),0),date=v.due<today()?today():v.due;
+  const j={id:'j'+num,num:'J-'+num,customerId:v.cid,locId:v.locId||null,trade:v.trade,techId:'',date,time:'08:00',dur:Math.min(8,Math.max(2,Math.ceil(hrs))),status:'scheduled',desc:shortPlan(pl)+' plan visit: '+v.label,locNote:'',tasks,hours:null,materials:[],checklist:CHECK[v.trade].map(()=>false),partsNeeded:'',invoice:null,summary:'',recs:'',notes:[{by:'Membership',text:`${pl.name} visit. Services listed are included at no charge. ${pl.discount}% off any added repairs. Record every piece of equipment you see.`,at:stamp()}]};
+  state.jobs.push(j);v.jobId=j.id;save();return j}
+function syncPv(){document.querySelectorAll('.sheet [data-pv]').forEach(i=>{const v=ui.sheet.visits[+i.dataset.pv];if(!v)return;if(i.dataset.pk==='task'){v.tasks=[i.value];v.trade=pb(i.value)?pb(i.value).trade:'hvac'}else if(i.dataset.pk==='mo')v.mo=+i.value;else v.label=i.value})}
+function keepPlanFields(){const keep={};document.querySelectorAll('.sheet [data-g="pl"]').forEach(i=>keep[i.dataset.k]=i.value);const dg=$('#plDiag').checked;renderSheet();Object.entries(keep).forEach(([k,v])=>{const i=document.querySelector(`.sheet [data-g="pl"][data-k="${k}"]`);if(i)i.value=v});$('#plDiag').checked=dg}
+function rsCheck(){const w=$('#rsWarn');if(!w)return;const cf=conflicts($('#rsTech').value,$('#rsDate').value,$('#rsTime').value,+$('#rsDur').value,ui.sheet.id);w.innerHTML=cf.length?`<div class="callout warn" style="margin-top:12px"><strong>Double booking:</strong> ${esc(first(tech($('#rsTech').value).name))} already has ${esc(conflictText(cf))}.</div>`:''}
+function shrinkPhoto(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,900/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);cb(cv.toDataURL('image/jpeg',.7))};im.onerror=()=>toast('That file could not be read as a photo');im.src=r.result};r.readAsDataURL(file)}
+const CHG={
+  logo:el=>{const f=el.files&&el.files[0];if(!f)return;shrinkLogo(f,url=>{ui.sheet.logo=url;const pv=$('#logoPrev');pv.innerHTML=`<img src="${url}" alt="Logo preview">`})},
+  memplan:el=>{ui.sheet.plan=el.value;renderSheet()},
+  eqphoto:el=>{const f=el.files&&el.files[0];if(!f)return;const keep={};document.querySelectorAll('.sheet [data-g="eq"]').forEach(i=>keep[i.dataset.k]=i.value);shrinkPhoto(f,url=>{ui.sheet.photo=url;renderSheet();document.querySelectorAll('.sheet [data-g="eq"]').forEach(i=>{if(keep[i.dataset.k]!==undefined)i.value=keep[i.dataset.k]});toast('Photo added')})},
+  rscheck:()=>{ui.sheet.okDouble=false;rsCheck()},
+  me:el=>{ui.me=el.value;render()},
+  check:el=>{job(el.dataset.id).checklist[+el.dataset.i]=el.checked;save();render()},
+  hours:el=>{job(el.dataset.id).hours=el.value===''?null:Math.max(0,+el.value);save();render()},
+  summary:el=>{job(el.dataset.id).summary=el.value;save()},
+  recs:el=>{job(el.dataset.id).recs=el.value;save()},
+  terms:el=>{job(el.dataset.id).invoice.terms=el.value;save();render()},
+  mats:el=>{job(el.dataset.id).invoice.showMaterials=el.checked;save();render()},
+  eta:el=>{ui.sheet.eta=+el.value;$('#omwPrev').firstChild.textContent=omwText(job(el.dataset.id),+el.value)},
+  icust:el=>{syncIntake();intake.customerId=el.value;intake.site={};render()}
+};
+const INP={
+  payamt:el=>{const a=parseFloat(el.value),f=cardFee(ui.sheet.m,isFinite(a)?a:0);const p=document.querySelector('.sheet .sub.small strong');if(p&&f)p.textContent=money(f,2)},
+  pickq:el=>{ui.sheet.q=el.value;$('#picklist').innerHTML=pickList()},
+  ipq:el=>{ui.sheet.q=el.value;$('#iplist').innerHTML=invPickList()},
+  invq:el=>{ui.invQ=el.value;$('#invlist').innerHTML=invList()},
+  custq:el=>{ui.custQ=el.value;$('#custlist').innerHTML=custList()},
+  pb:()=>pbSuggest(),
+  summary:el=>{job(el.dataset.id).summary=el.value;save()}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const f=ACT[el.dataset.act];if(f)f(el,el.dataset.id,e)});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.g&&intake)intake.okDouble=false;if(el.dataset&&el.dataset.chg&&CHG[el.dataset.chg])CHG[el.dataset.chg](el,e)});
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset&&el.dataset.chg==='summary')INP.summary(el);if(el.dataset&&el.dataset.chg==='recs')CHG.recs(el);if(el.dataset&&el.dataset.inp&&INP[el.dataset.inp])INP[el.dataset.inp](el,e)});
+let dragId=null,dragOff=0;
+document.addEventListener('dragstart',e=>{const b=e.target.closest&&e.target.closest('[data-drag]');if(!b)return;dragId=b.dataset.drag;dragOff=e.clientY-b.getBoundingClientRect().top;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragId)}catch(x){}b.classList.add('dragging')});
+document.addEventListener('dragend',e=>{document.querySelectorAll('.dragging,.over').forEach(x=>x.classList.remove('dragging','over'))});
+document.addEventListener('dragover',e=>{const c=e.target.closest&&e.target.closest('.bcol');if(!c||!dragId)return;e.preventDefault();document.querySelectorAll('.bcol.over').forEach(x=>x!==c&&x.classList.remove('over'));c.classList.add('over')});
+document.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('.bcol');if(!c||!dragId)return;e.preventDefault();const j=job(dragId);dragId=null;if(!j)return;
+  const y=e.clientY-c.getBoundingClientRect().top-dragOff,dur=Math.round((j.dur||3)*60);let m=BS*60+Math.round(y/PX*2)*30;m=Math.max(BS*60,Math.min(BE*60-30,m));
+  const tid=c.dataset.col,date=ui.day||today(),cf=conflicts(tid,date,fromMin(m),dur/60,j.id);
+  j.techId=tid;j.time=fromMin(m);j.date=date;if(j.status==='enroute')j.status='scheduled';save();render();
+  toast(cf.length?`Moved, but ${first(tech(tid).name)} is now double booked with ${cust(cf[0].customerId).name}`:`Moved to ${tid?first(tech(tid).name):'Unassigned'} at ${fmtTimePlain(fromMin(m))}`)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.sheet)closeSheet()});
+setInterval(()=>{if(view.name==='clock'&&!ui.sheet)render()},60000);
+
+load();render();
+</script>
+</body>
+</html>
