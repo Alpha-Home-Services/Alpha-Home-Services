@@ -17,6 +17,7 @@ The automated tests (`npm test`) already check the database rules directly. This
 - [ ] 1.2 Open a customer link directly (copy one from a signed-in window, e.g. `/customers/00000000-0000-4000-8000-000000000001`): you're sent to **Sign in**.
 - [ ] 1.3 Open `/import` directly: you're sent to **Sign in**.
 - [ ] 1.4 There's no sign-up link, and a wrong password shows "Sign-in failed."
+- [ ] 1.5 Paste a photo address copied from a signed-in window (right-click a thumbnail, **Copy image address**; it looks like `/photos/…`): it shows "Sign in required", not the photo.
 
 ## 2. Office (`office@example.test`)
 
@@ -63,6 +64,7 @@ Import
 - [ ] 4.1 Sign in. The customer list is empty.
 - [ ] 4.2 Open the assigned customer's link directly: **"You don't have access to that customer."**
 - [ ] 4.3 Open `/customers/new` directly: **"You don't have access to that"**.
+- [ ] 4.4 Paste a photo address copied from the assigned customer (from the office or assigned-tech window): it shows "Not found", not the photo.
 
 ## 5. Admin (`admin@example.test`)
 
