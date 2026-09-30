@@ -1,0 +1,1 @@
+'use client';export default function ErrorPage({reset}:{reset:()=>void}){return <section className="panel"><h1>We couldn’t complete that request</h1><p>Check the required fields, your access, and the test database connection.</p><button onClick={reset}>Try again</button><a className="button" href="/">Customers</a></section>}
