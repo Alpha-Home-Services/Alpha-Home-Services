@@ -1,0 +1,5 @@
+import Link from 'next/link';import {session} from '@/lib/auth';import {Nav} from '@/components/Nav';
+export const dynamic='force-dynamic';
+// Shown instead of the generic error page when a signed-in user reaches something their role or assignments don't allow.
+const REASONS={office:'Adding and editing customers and buildings is for office staff. Your account is set up as a technician.',customer:'That customer isn’t assigned to you, or it no longer exists.'};
+export default async function Denied({searchParams}:{searchParams:Promise<{reason?:string}>}){const {profile}=await session();const {reason}=await searchParams;return <><Nav name={profile.display_name} role={profile.role}/><section className="panel" role="alert"><h1>You don’t have access to that</h1><p>{REASONS[reason==='customer'?'customer':'office']}</p><p>If you need it, ask the office to change your access.</p><Link className="button primary" href="/">Back to customers</Link></section></>}

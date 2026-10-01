@@ -1,0 +1,4 @@
+import { login } from '../actions';
+import { configured } from '@/lib/config';
+import { redirect } from 'next/navigation';
+export default async function Login({searchParams}:{searchParams:Promise<{error?:string}>}){if(!configured())redirect('/setup');const {error}=await searchParams;return <><h1>Sign in</h1><p>Use a test account assigned by the office.</p>{error&&<p role="alert" className="error">{error==='access'?'Your account has not been assigned an Alpha role.':'Sign-in failed. Check your test login and try again.'}</p>}<form action={login} className="panel"><label className="field">Email<input name="email" type="email" autoComplete="username" required maxLength={254}/></label><label className="field">Password<input name="password" type="password" autoComplete="current-password" required minLength={8}/></label><button className="primary">Sign in</button></form></>}

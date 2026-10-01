@@ -1,0 +1,3 @@
+import Link from 'next/link';import {session} from '@/lib/auth';import {Nav} from '@/components/Nav';
+// Same message whether the customer doesn't exist or isn't assigned, so a tech can't use it to find out which customers exist.
+export default async function CustomerNotFound(){const {profile}=await session();return <><Nav name={profile.display_name} role={profile.role}/><section className="panel" role="alert"><h1>You don’t have access to that customer</h1><p>That customer isn’t assigned to you, or it no longer exists.</p><p>If you need it, ask the office to change your access.</p><Link className="button primary" href="/">Back to customers</Link></section></>}
