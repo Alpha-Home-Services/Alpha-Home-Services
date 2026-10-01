@@ -57,7 +57,7 @@ Phase 1 is complete. The end-to-end test passed on the isolated test Supabase pr
 Phase 2 is in progress on the `phase-2` branch (see CLAUDE.md):
 
 - Done (click-through passed 2026-10-01): price book with the flat-rate formula and admin-only pricing settings. Techs see task names, what's included and prices only; labor hours, parts cost and margins are office/admin only.
-- Built, waiting on a click-through: inventory with receiving, count corrections with a reason, and a stock history. Techs see parts, locations and counts only; cost, stock value and history are office/admin only.
+- Done (click-through passed 2026-10-01): inventory with receiving, count corrections with a reason, and a stock history. Techs see parts, locations and counts only; cost, stock value and history are office/admin only.
 - Next: intake by trade, and the tech job page, including offline support for techs on jobs with no cell signal.
 
 Deployments and live integrations remain off.
