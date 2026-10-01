@@ -14,3 +14,10 @@ export const EQ:Record<string,EquipmentDefinition>={
 };
 export const TRADE_NAMES:Record<string,string>={hvac:'HVAC',electrical:'Electrical',plumbing:'Plumbing',septic:'Septic'};
 export const PHOTO_BUCKET='equipment-photos';
+// Trade checklists from the prototype. The number of items per trade must match public.checklist_size() in the database.
+export const CHECK:Record<string,string[]>={
+ hvac:['Check thermostat operation','Inspect filter and replace if dirty','Test capacitor and contactor','Check refrigerant pressures','Rinse condenser coil','Flush condensate drain','Record supply and return temperatures'],
+ electrical:['Shut off and lock out circuit before work','Test outlets and GFCI protection','Check panel for heat, corrosion, or loose lugs','Verify breaker and wire sizing match','Label any circuits changed','Test circuit after repair with customer'],
+ plumbing:['Locate main shutoff before work','Inspect for active leaks','Test water pressure','Check water heater T&P valve','Run fixtures after repair and check for leaks','Clean up work area'],
+ septic:['Locate and expose tank lids','Record sludge and scum levels','Inspect inlet and outlet baffles','Check effluent filter','Walk drain field for pooling or odor','Record gallons pumped','Secure lids and replace cover soil']
+};

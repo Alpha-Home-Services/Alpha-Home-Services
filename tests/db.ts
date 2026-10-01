@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';import {PGlite} from '@electric-sql/pglite';
 // A throwaway Postgres in memory with the Supabase pieces the migrations expect (roles, auth.uid(), a storage stand-in),
 // then every migration in order and the fictional seed. No real database is touched.
-export const MIGRATIONS=['202609300001_foundation.sql','202610010001_equipment_editing_photos.sql','202610020001_hcp_import.sql','202610030001_price_book.sql','202610040001_inventory.sql','202610050001_jobs.sql'];
+export const MIGRATIONS=['202609300001_foundation.sql','202610010001_equipment_editing_photos.sql','202610020001_hcp_import.sql','202610030001_price_book.sql','202610040001_inventory.sql','202610050001_jobs.sql','202610060001_job_work.sql'];
 export async function testDatabase(){
  const db=new PGlite();
  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;grant usage on schema public,auth to anon,authenticated;grant execute on function auth.uid() to anon,authenticated;`);
