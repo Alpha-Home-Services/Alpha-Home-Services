@@ -12,7 +12,7 @@ This is the start of the real app, separate from the click-through prototype. It
 - Housecall Pro customer CSV import (office only) with a preview, warnings and an all-or-nothing save; re-importing skips customers already brought in.
 - Fictional test seed. No imports of real customers, no payment SDKs, no calls, texts, emails, or integrations.
 
-The prototype remains the reference for subsequent phases. Memberships, scheduling, invoices, and offline sync are NOT implemented in this first foundation commit. Do not call Phase 1 complete until the remaining items and acceptance tests pass against a disposable database.
+The prototype remains the reference for subsequent phases. Memberships, scheduling, invoices, and offline sync are NOT implemented in this first foundation commit. Phase 1 passed its acceptance tests against a disposable database on 2026-10-01.
 
 ## Run without connecting a database
 
@@ -52,8 +52,8 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 
 ## Next work
 
-- Test end to end against the isolated Supabase environment before advancing to Phase 2, using [docs/phase-1-end-to-end-checklist.md](docs/phase-1-end-to-end-checklist.md).
+Phase 1 is complete. The end-to-end test passed on the isolated test Supabase project on 2026-10-01 (office, assigned tech and other tech, on a computer and an iPhone), using [docs/phase-1-end-to-end-checklist.md](docs/phase-1-end-to-end-checklist.md) together with the automated tests.
 
-Offline support for techs on jobs with no cell signal moves to Phase 2, with the tech job page.
+Next is Phase 2 (see CLAUDE.md): price book with the formula, inventory, intake by trade, and the tech job page, including offline support for techs on jobs with no cell signal.
 
 Deployments and live integrations remain off.
