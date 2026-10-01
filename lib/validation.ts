@@ -10,3 +10,8 @@ export function photoType(bytes:Uint8Array):'jpg'|'png'|'webp'|null{const at=(i:
 const amount=(max:number)=>z.coerce.number().min(0).max(max);
 export const priceTaskInput=z.object({id:z.union([z.uuid(),z.literal('')]),trade:z.enum(trades),name:z.string().trim().min(1).max(160),includes:z.string().trim().max(500),hours:amount(100).multipleOf(0.25),parts:amount(100000),mode:z.enum(['formula','custom']),custom_price:z.union([amount(1000000),z.literal('')])}).refine(x=>x.mode==='formula'||x.custom_price!=='',{message:'Enter a custom price.'});
 export const pricingSettingsInput=z.object({labor_rate:z.coerce.number().gt(0).max(10000),parts_markup:amount(1000),card_cover:z.coerce.number().min(0).lt(10),tech_cost:amount(10000),target_margin:amount(100)});
+const count=(max:number)=>z.coerce.number().int().min(0).max(max);
+export const STOCK_REASONS=['Stock count','Damaged','Lost or stolen','Returned to supplier','Other'] as const;
+export const inventoryItemInput=z.object({id:z.union([z.uuid(),z.literal('')]),trade:z.enum(trades),name:z.string().trim().min(1).max(160),sku:z.string().trim().max(80),location:z.string().trim().max(160),unit_cost:amount(100000),reorder_at:count(1000000),on_hand:z.union([count(1000000),z.literal('')])});
+export const receiveInput=z.object({id:z.uuid(),qty:z.coerce.number().int().min(1).max(100000)});
+export const correctionInput=z.object({id:z.uuid(),counted:count(1000000),reason:z.enum(STOCK_REASONS),note:z.string().trim().max(400)});
