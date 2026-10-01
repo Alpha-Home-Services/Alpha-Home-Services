@@ -12,17 +12,15 @@ export function Nav({name, role}: {name: string; role: string}) {
   };
 
   return (
-    <nav
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '1rem',
-        backgroundColor: '#2c5282',
-        color: 'white',
-        borderBottom: '3px solid #1a3a5c'
-      }}
-    >
+    <nav style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '1rem',
+      backgroundColor: '#2c5282',
+      color: 'white',
+      borderBottom: '3px solid #1a3a5c'
+    }}>
       <div style={{display: 'flex', gap: '2rem', alignItems: 'center'}}>
         <Link href="/" style={{color: 'white', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1rem'}}>
           Alpha Home Services
@@ -66,4 +64,14 @@ export function Nav({name, role}: {name: string; role: string}) {
             padding: '0.5rem 1rem',
             backgroundColor: '#d9534f',
             color: 'white',
-            border:
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Logout
+        </button>
+      </div>
+    </nav>
+  );
+}
