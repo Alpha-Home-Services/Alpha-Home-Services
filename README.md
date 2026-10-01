@@ -22,7 +22,7 @@ Node 20.9+ required. Run `npm ci`, then `npm run dev`. Open http://localhost:300
 
 Do not use Alpha's production data or a production Supabase project. Prefer a local Supabase stack if Docker is available. A hosted disposable test project is also possible, but account setup and any charges must be approved separately. No project, subscription or deployment is created by this code.
 
-1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`, then `supabase/migrations/202610010001_equipment_editing_photos.sql` (creates the private `equipment-photos` storage bucket), then `supabase/migrations/202610020001_hcp_import.sql`, then `supabase/migrations/202610030001_price_book.sql` and once `supabase/seed_price_book.sql` (27 sample tasks named `TEST —`), then `supabase/migrations/202610040001_inventory.sql` and once `supabase/seed_inventory.sql` (18 sample parts named `TEST —`). Apply only the files not yet applied; never rerun one.
+1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`, then `supabase/migrations/202610010001_equipment_editing_photos.sql` (creates the private `equipment-photos` storage bucket), then `supabase/migrations/202610020001_hcp_import.sql`, then `supabase/migrations/202610030001_price_book.sql` and once `supabase/seed_price_book.sql` (27 sample tasks named `TEST —`), then `supabase/migrations/202610040001_inventory.sql` and once `supabase/seed_inventory.sql` (18 sample parts named `TEST —`), then `supabase/migrations/202610050001_jobs.sql`. Apply only the files not yet applied; never rerun one.
 2. Disable public signup. Create test accounts through Supabase Auth: admin@example.test, office@example.test, tech@example.test and other-tech@example.test. Use your own test passwords; none are committed. Do not send invitations or email real addresses.
 3. Using the database administrator, insert each auth user's ID into public.profiles with the corresponding role. Only a database administrator can assign roles. Example (replace the UUID with the real test Auth ID):
 
@@ -58,6 +58,7 @@ Phase 2 is in progress on the `phase-2` branch (see CLAUDE.md):
 
 - Done (click-through passed 2026-10-01): price book with the flat-rate formula and admin-only pricing settings. Techs see task names, what's included and prices only; labor hours, parts cost and margins are office/admin only.
 - Done (click-through passed 2026-10-01): inventory with receiving, count corrections with a reason, and a stock history. Techs see parts, locations and counts only; cost, stock value and history are office/admin only.
-- Next: intake by trade, and the tech job page, including offline support for techs on jobs with no cell signal.
+- Built, waiting on a click-through: intake by trade (New job) that creates the job, any new customer, site details and a private note in one step, with a double-booking warning; a simple job list and job page. A tech can see a customer while they have an open job there, until it's invoiced.
+- Next: the tech job page, including offline support for techs on jobs with no cell signal.
 
 Deployments and live integrations remain off.
