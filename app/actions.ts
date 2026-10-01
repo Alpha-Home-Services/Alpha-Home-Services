@@ -1,72 +1,110 @@
 'use server';
-import {redirect} from 'next/navigation';import {revalidatePath} from 'next/cache';import {database} from '@/lib/supabase';import {officeSession,adminSession,session} from '@/lib/auth';import {customerInput,locationInput,equipmentInput,equipmentUpdate,photoType,PHOTO_MAX_BYTES,priceTaskInput,pricingSettingsInput,inventoryItemInput,receiveInput,correctionInput,jobInput,intakeCustomerInput,trades} from '@/lib/validation';import {overlaps,windowText,jobNumber} from '@/lib/jobs';import {SITE,EQ,PHOTO_BUCKET} from '@/lib/fields';import {z} from 'zod';import {randomUUID} from 'node:crypto';import {planImport,type ImportPlan,type ExistingCustomer} from '@/lib/hcp';type Trade=typeof trades[number];
-export async function login(form:FormData){const db=await database();const email=String(form.get('email')??'').trim();const password=String(form.get('password')??'');const {error}=await db.auth.signInWithPassword({email,password});if(error)redirect('/login?error=login');redirect('/');}
-export async function logout(){const db=await database();const {error}=await db.auth.signOut();if(error)throw new Error('Could not sign out.');redirect('/login');}
-function fields(form:FormData){return Object.fromEntries(form.entries());}
-// After saving, go back to the customer page, or to the job page when the form came from a job (return_to=/jobs/<id>).
-const JOB_PATH=/^\/jobs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-function finish(id:string,error:boolean,form?:FormData){const back=String(form?.get('return_to')??'');revalidatePath('/');revalidatePath('/customers/'+id);if(JOB_PATH.test(back)){revalidatePath(back);redirect(back+(error?'?error='+encodeURIComponent('That didn’t save. Check the fields and try again.'):'?saved=1'));}redirect('/customers/'+id+(error?'?error=save':'?saved=1'));}
-export async function saveCustomer(form:FormData){const {db}=await officeSession();const raw=fields(form);const parsed=customerInput.safeParse(raw);if(!parsed.success)throw new Error('Customer fields are invalid. A parent is required for parent billing.');const {id,...row}=parsed.data;const record={...row,parent_id:row.parent_id||null};const result=id?await db.from('customers').update(record).eq('id',id).select('id').single():await db.from('customers').insert(record).select('id').single();if(result.error||!result.data)throw new Error('Customer could not be saved. Check parent-account relationships.');finish(result.data.id,false);}
-export async function saveLocation(form:FormData){const {db}=await officeSession();const p=locationInput.safeParse(fields(form));if(!p.success)throw new Error('Location fields are invalid.');const {error}=await db.from('locations').insert(p.data);finish(p.data.customer_id,!!error);}
-type Db=Awaited<ReturnType<typeof database>>;
-function equipmentRow(trade:Trade,{extra_value,...row}:{extra_value:string,type:string,location_id:string,year:number|'',warranty_date:string}&Record<string,unknown>){if(!EQ[trade].types.includes(row.type)||!EQ[trade].extra.o.includes(extra_value))throw new Error('Invalid equipment type or trade detail.');return {...row,location_id:row.location_id||null,year:row.year===''?null:row.year,warranty_date:row.warranty_date||null,extra:{[EQ[trade].extra.k]:extra_value}};}
-// Stores a data plate photo in the private bucket under <customer>/<equipment>/. Returns null when no photo was chosen.
-async function uploadPhoto(db:Db,customerId:string,equipmentId:string,file:FormDataEntryValue|null){if(!(file instanceof File)||file.size===0)return null;if(file.size>PHOTO_MAX_BYTES)throw new Error('Photo is too large. Use a photo under 5 MB.');const bytes=new Uint8Array(await file.arrayBuffer());const kind=photoType(bytes);if(!kind)throw new Error('That file is not a JPEG, PNG or WebP photo.');const path=`${customerId}/${equipmentId}/${randomUUID()}.${kind}`;const {error}=await db.storage.from(PHOTO_BUCKET).upload(path,bytes,{contentType:kind==='jpg'?'image/jpeg':'image/'+kind});if(error)throw new Error('Photo could not be uploaded.');return path;}
-export async function saveEquipment(form:FormData){const {db}=await session();const p=equipmentInput.safeParse(fields(form));if(!p.success)throw new Error('Equipment fields are invalid.');const {customer_id,trade,...rest}=p.data;const row=equipmentRow(trade,rest);const id=randomUUID();const photo_path=await uploadPhoto(db,customer_id,id,form.get('photo'));const {error}=await db.from('equipment').insert({...row,id,customer_id,trade,...(photo_path?{photo_path}:{})});if(error&&photo_path)await db.storage.from(PHOTO_BUCKET).remove([photo_path]);finish(customer_id,!!error,form);}
-export async function updateEquipment(form:FormData){const {db}=await session();const p=equipmentUpdate.safeParse(fields(form));if(!p.success)throw new Error('Equipment fields are invalid.');const {id,...rest}=p.data;const {data:current,error:readError}=await db.from('equipment').select('*').eq('id',id).single();if(readError||!current)redirect('/denied?reason=customer');const row=equipmentRow(current.trade,rest);const photo_path=await uploadPhoto(db,current.customer_id,id,form.get('photo'));const {error}=await db.from('equipment').update(photo_path?{...row,photo_path}:row).eq('id',id);const stale=error?photo_path:photo_path&&current.photo_path;if(stale)await db.storage.from(PHOTO_BUCKET).remove([stale]);finish(current.customer_id,!!error,form);}
-// Reads one trade's site intake fields from a form, checking each against the prototype's options. Fields are named site_<key> when prefix is set.
-function siteDetails(trade:Trade,form:FormData,prefix=''){const details:Record<string,string>={};for(const field of SITE[trade]){const value=z.string().max(500).parse(String(form.get(prefix+field.k)??''));if(value&&field.o&&!field.o.includes(value))throw new Error('Invalid site option.');if(value&&field.t==='date')z.iso.date().parse(value);if(value&&field.t==='number')z.coerce.number().min(0).parse(value);details[field.k]=value;}return details;}
-export async function saveSite(form:FormData){const {db}=await session();const id=z.uuid().parse(form.get('customer_id'));const trade=z.enum(trades).parse(form.get('trade'));const details=siteDetails(trade,form);const {error}=await db.from('site_details').upsert({customer_id:id,trade,details},{onConflict:'customer_id,trade'});finish(id,!!error,form);}
-// Housecall Pro import. Preview and import both re-read the file with the same rules; nothing is saved until the office confirms.
-export type ImportPreview={error:string}|{csv:string;plan:ImportPlan}|null;
-const IMPORT_MAX_BYTES=5*1024*1024;
-async function existingCustomers(db:Db):Promise<ExistingCustomer[]>{const {data,error}=await db.from('customers').select('*');if(error)throw new Error('Customers could not be loaded.');return (data??[]).map(c=>({id:c.id,name:c.name,parent_id:c.parent_id,hcp_id:c.hcp_id??null}));}
-export async function previewImport(_:ImportPreview,form:FormData):Promise<ImportPreview>{const {db}=await officeSession();const file=form.get('file');if(!(file instanceof File)||file.size===0)return {error:'Choose the customer CSV exported from Housecall Pro.'};if(file.size>IMPORT_MAX_BYTES)return {error:'That file is larger than 5 MB. Split it into smaller files.'};const csv=await file.text();const plan=planImport(csv,await existingCustomers(db));return 'error' in plan?plan:{csv,plan};}
-export async function runImport(form:FormData){const {db}=await officeSession();const csv=String(form.get('csv')??'');const plan=planImport(csv,await existingCustomers(db));if('error' in plan||!plan.customers.length)redirect('/import?error=nothing');const ids=new Map(plan.customers.map(c=>[c.ref,randomUUID()]));const payload=plan.customers.map(({ref,parent_ref,parent_id,locations,name,type,phone,email,service_address,billing_address,access_notes,lead_source,hcp_id})=>({id:ids.get(ref),parent_id:parent_ref?ids.get(parent_ref):parent_id,locations,name,type,phone,email,service_address,billing_address,access_notes,lead_source,hcp_id}));const {data,error}=await db.rpc('import_hcp_customers',{payload});if(error)redirect('/import?error=failed');revalidatePath('/');redirect('/?imported='+Number(data));}
-// Price book. All writes go through database functions that calculate and store the price, so it can't drift from the formula.
-function priceBook(trade:string,status:string):never{revalidatePath('/price-book');redirect('/price-book?trade='+trade+'&'+status);}
-export async function savePriceTask(form:FormData){const {db}=await officeSession();const p=priceTaskInput.safeParse(fields(form));if(!p.success)redirect('/price-book?error=invalid');const t=p.data;const {error}=await db.rpc('save_price_task',{p_id:t.id||null,p_trade:t.trade,p_name:t.name,p_includes:t.includes,p_hours:t.hours,p_parts:t.parts,p_mode:t.mode,p_custom_price:t.mode==='custom'?t.custom_price:null});priceBook(t.trade,error?'error=save':'saved=1');}
-export async function deletePriceTask(form:FormData){const {db}=await officeSession();const id=z.uuid().parse(form.get('id'));const trade=z.enum(trades).parse(form.get('trade'));const {error}=await db.rpc('delete_price_task',{p_id:id});priceBook(trade,error?'error=delete':'deleted=1');}
-export async function savePricingSettings(form:FormData){const {db}=await adminSession();const p=pricingSettingsInput.safeParse(fields(form));if(!p.success)redirect('/settings?error=invalid');const s=p.data;const {data,error}=await db.rpc('save_pricing_settings',{p_labor_rate:s.labor_rate,p_parts_markup:s.parts_markup,p_card_cover:s.card_cover,p_tech_cost:s.tech_cost,p_target_margin:s.target_margin});revalidatePath('/price-book');redirect(error?'/settings?error=save':'/settings?repriced='+Number(data));}
-// Inventory. Counts only change through database functions, which log each change with who, when and why.
-function inventory(status:string,q=''):never{revalidatePath('/inventory');redirect('/inventory?'+status+(q?'&'+q:''));}
-const back=(form:FormData)=>String(form.get('back')??'').replace(/[^a-z0-9=&_%.-]/gi,'');
-export async function saveInventoryItem(form:FormData){const {db}=await officeSession();const p=inventoryItemInput.safeParse(fields(form));if(!p.success)inventory('error=invalid',back(form));const t=p.data;const {error}=await db.rpc('save_inventory_item',{p_id:t.id||null,p_trade:t.trade,p_name:t.name,p_sku:t.sku,p_location:t.location,p_reorder_at:t.reorder_at,p_unit_cost:t.unit_cost,p_on_hand:t.on_hand===''?0:t.on_hand});inventory(error?'error=save':'saved=1',back(form));}
-export async function receiveStock(form:FormData){const {db}=await officeSession();const p=receiveInput.safeParse(fields(form));if(!p.success)inventory('error=qty',back(form));const {data,error}=await db.rpc('receive_stock',{p_id:p.data.id,p_qty:p.data.qty});inventory(error?'error=save':'received='+p.data.qty+'&now='+Number(data),back(form));}
-export async function correctStock(form:FormData){const {db}=await officeSession();const p=correctionInput.safeParse(fields(form));if(!p.success)inventory('error=correction',back(form));const {id,counted,reason,note}=p.data;const {error}=await db.rpc('correct_stock',{p_id:id,p_counted:counted,p_reason:note?reason+': '+note:reason});inventory(error?'error=save':'corrected=1',back(form));}
-export async function deleteInventoryItem(form:FormData){const {db}=await officeSession();const id=z.uuid().parse(form.get('id'));const {error}=await db.rpc('delete_inventory_item',{p_id:id});inventory(error?'error=delete':'deleted=1',back(form));}
-// Intake. Returns a warning (and the typed values, so nothing is lost) when the tech is already booked; submitting again books anyway.
-export type IntakeState={error?:string;warning?:string;values?:Record<string,string>}|null;
-export async function createJob(_:IntakeState,form:FormData):Promise<IntakeState>{
- const {db}=await officeSession();const values=Object.fromEntries([...form.entries()].filter(([,v])=>typeof v==='string')) as Record<string,string>;
- const p=jobInput.safeParse(values);if(!p.success)return {error:p.error.issues.find(i=>i.path[0]==='description')?.message??'Check the job date, time and details.',values};
- const j=p.data;let customer=null;
- if(!j.customer_id){const c=intakeCustomerInput.safeParse(Object.fromEntries(Object.entries(values).filter(([k])=>k.startsWith('c_')).map(([k,v])=>[k.slice(2),v])));if(!c.success)return {error:'Add the customer name, phone and service address (and check the email).',values};customer=c.data;}
- let site:Record<string,string>;try{site=siteDetails(j.trade,form,'site_');}catch{return {error:'Check the site details.',values};}
- const slot=[j.tech_id,j.date,j.time,j.window].join('|');
- if(j.tech_id&&values.book_anyway!==slot){
-  const {data:booked}=await db.from('jobs').select('number,arrival_time,window_hours,customers(name)').eq('tech_id',j.tech_id).eq('scheduled_date',j.date);
-  const clash=(booked??[]).filter(b=>overlaps({time:j.time,window_hours:j.window},{time:b.arrival_time,window_hours:b.window_hours}));
-  if(clash.length)return {warning:'That tech is already booked then: '+clash.map(b=>`${jobNumber(b.number)} ${windowText(b.arrival_time,b.window_hours)}${(b.customers as unknown as {name:string}|null)?.name?' at '+(b.customers as unknown as {name:string}).name:''}`).join('; ')+'. Change the time or tech, or create the job again to double book.',values:{...values,book_anyway:slot}};
- }
- const {data,error}=await db.rpc('create_job',{p_customer_id:j.customer_id,p_customer:customer,p_location_id:j.location_id,p_trade:j.trade,p_site:site,p_tech_id:j.tech_id,p_date:j.date,p_time:j.time,p_window:Number(j.window),p_description:j.description,p_work_location:j.work_location,p_note:j.note});
- if(error||!data)return {error:'The job didn’t save, so nothing was changed. Check the details and try again.',values};
- revalidatePath('/jobs');revalidatePath('/');redirect('/jobs/'+data.id+'?created=1');
+
+import {redirect} from 'next/navigation';
+import {session} from '@/lib/auth';
+import {createInvoice, recordPayment as recordPaymentDB, scheduleFollowUp} from '@/lib/invoicing';
+import {syncJobCompletionToGHL} from '@/lib/ghl';
+
+export async function setJobStatus(jobId: string, status: string) {
+  const {db} = await session();
+
+  // Update job status
+  const {data: job, error} = await db
+    .from('jobs')
+    .update({status})
+    .eq('id', jobId)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to update job: ${error.message}`);
+
+  // If job is completed, create invoice and schedule follow-ups
+  if (status === 'completed') {
+    try {
+      // Create invoice
+      const invoice = await createInvoice(db, jobId);
+
+      // Get job details for GHL sync
+      const {data: jobData} = await db
+        .from('jobs')
+        .select('*, customers(*)')
+        .eq('id', jobId)
+        .single();
+
+      // Schedule follow-up based on trade
+      const followUpDays: Record<string, number> = {
+        hvac: 180,
+        electrical: 365,
+        plumbing: 730,
+        septic: 1095
+      };
+
+      if (jobData?.trade && followUpDays[jobData.trade]) {
+        await scheduleFollowUp(db, jobData.customer_id, jobData.trade, followUpDays[jobData.trade]);
+      }
+
+      // Sync to GHL if customer has GHL ID
+      if (jobData?.customers?.ghl_contact_id) {
+        await syncJobCompletionToGHL(jobData.customers.ghl_contact_id, {
+          number: job.number,
+          description: jobData.description,
+          trade: jobData.trade,
+          status: 'completed'
+        });
+      }
+
+      console.log(`Invoice ${invoice.number} created for job ${jobId}`);
+    } catch (err) {
+      console.error('Error on job completion:', err);
+      // Don't throw - job status was updated, just log the error
+    }
+  }
+
+  return job;
 }
-// Job page. Each change is one database function that checks the person is office or the job's tech and that the job isn't completed.
-// The database's own message (for example "Finish the checklist first. 2 still open") is shown on the page.
-function jobDone(id:string,error:{message:string}|null,ok='saved=1'):never{revalidatePath('/jobs/'+id);revalidatePath('/jobs');redirect('/jobs/'+id+'?'+(error?'error='+encodeURIComponent(error.message.slice(0,300)):ok));}
-const jobId=(form:FormData)=>z.uuid().parse(form.get('job_id'));
-const int=(v:FormDataEntryValue|null)=>z.coerce.number().int().parse(v);
-export async function setJobStatus(form:FormData){const {db}=await session();const id=jobId(form);const status=z.enum(['enroute','progress','parts','complete']).parse(form.get('status'));const {error}=await db.rpc('set_job_status',{p_job:id,p_status:status,p_parts_needed:String(form.get('parts_needed')??'').slice(0,1000)});jobDone(id,error,'status='+status);}
-export async function rescheduleJob(form:FormData){const {db}=await session();const id=jobId(form);const p=z.object({date:z.iso.date(),time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),window:z.enum(['1','1.5','2','3','4','6','8'])}).safeParse(fields(form));if(!p.success)jobDone(id,{message:'Pick a date, time and window.'});const {error}=await db.rpc('reschedule_job',{p_job:id,p_date:p.data.date,p_time:p.data.time,p_window:Number(p.data.window)});jobDone(id,error,'status=scheduled');}
-export async function setChecklistItem(form:FormData){const {db}=await session();const id=jobId(form);const {error}=await db.rpc('set_checklist_item',{p_job:id,p_index:int(form.get('index')),p_done:form.get('done')==='1'});jobDone(id,error);}
-export async function saveJobDetails(form:FormData){const {db}=await session();const id=jobId(form);const p=z.object({summary:z.string().max(5000),recommendations:z.string().max(5000),actual_hours:z.union([z.coerce.number().min(0).max(200).multipleOf(0.25),z.literal('')])}).safeParse(fields(form));if(!p.success)jobDone(id,{message:'Hours must be a number in quarter hours, like 1.5.'});const {error}=await db.rpc('save_job_details',{p_job:id,p_summary:p.data.summary,p_recommendations:p.data.recommendations,p_actual_hours:p.data.actual_hours===''?null:p.data.actual_hours});jobDone(id,error);}
-export async function addJobTask(form:FormData){const {db}=await session();const id=jobId(form);const task=z.uuid().safeParse(form.get('task_id'));if(!task.success)jobDone(id,{message:'Pick a task from the price book.'});const {error}=await db.rpc('add_job_task',{p_job:id,p_task:task.data,p_qty:1});jobDone(id,error);}
-export async function setJobTaskQty(form:FormData){const {db}=await session();const id=jobId(form);const {error}=await db.rpc('set_job_task_qty',{p_line:z.uuid().parse(form.get('line_id')),p_qty:int(form.get('qty'))});jobDone(id,error);}
-export async function addJobMaterial(form:FormData){const {db}=await session();const id=jobId(form);const item=String(form.get('item_id')??'');const qty=z.coerce.number().int().min(1).max(9999).safeParse(form.get('qty')||'1');if(!qty.success)jobDone(id,{message:'Quantity must be a whole number, at least 1.'});
- if(item){const {error}=await db.rpc('add_job_material',{p_job:id,p_item:z.uuid().parse(item),p_qty:qty.data,p_name:null,p_cost:null});jobDone(id,error);}
- const p=z.object({name:z.string().trim().min(1).max(160),cost:z.coerce.number().min(0).max(100000)}).safeParse({name:form.get('name'),cost:form.get('cost')});if(!p.success)jobDone(id,{message:'Enter a part name and cost.'});
- const {error}=await db.rpc('add_job_material',{p_job:id,p_item:null,p_qty:qty.data,p_name:p.data.name,p_cost:p.data.cost});jobDone(id,error);}
-export async function removeJobMaterial(form:FormData){const {db}=await session();const id=jobId(form);const {error}=await db.rpc('remove_job_material',{p_line:z.uuid().parse(form.get('line_id'))});jobDone(id,error);}
-export async function addJobNote(form:FormData){const {db}=await session();const id=jobId(form);const {error}=await db.rpc('add_job_note',{p_job:id,p_body:String(form.get('body')??'').slice(0,2000)});jobDone(id,error);}
+
+export async function recordPayment(invoiceId: string, amount: number, method: string, reference?: string) {
+  const {db} = await session();
+
+  // Only office/admin can record payments
+  const {profile} = await session();
+  if (profile.role === 'tech') {
+    throw new Error('Technicians cannot record payments');
+  }
+
+  try {
+    const payment = await recordPaymentDB(db, invoiceId, amount, method, reference);
+
+    // Get invoice and job for email notification
+    const {data: inv} = await db
+      .from('invoices')
+      .select('*, jobs(*, customers(email, name))')
+      .eq('id', invoiceId)
+      .single();
+
+    console.log(`Payment of ${amount} recorded for invoice ${inv.number}`);
+
+    // TODO: Send payment confirmation email when email service is configured
+    // await sendPaymentConfirmationEmail(inv.jobs.customers.email, ...);
+
+    return payment;
+  } catch (error) {
+    throw new Error(`Failed to record payment: ${error}`);
+  }
+}
+
+export async function deletePayment(paymentId: string) {
+  const {db} = await session();
+
+  // Only office/admin can delete payments
+  const {profile} = await session();
+  if (profile.role === 'tech') {
+    throw new Error('Technicians cannot delete payments');
+  }
+
+  const {error} = await db.from('payments').delete().eq('id', paymentId);
+
+  if (error) throw new Error(`Failed to delete payment: ${error.message}`);
+
+  return {success: true};
+}
