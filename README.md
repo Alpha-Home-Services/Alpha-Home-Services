@@ -22,7 +22,7 @@ Node 20.9+ required. Run `npm ci`, then `npm run dev`. Open http://localhost:300
 
 Do not use Alpha's production data or a production Supabase project. Prefer a local Supabase stack if Docker is available. A hosted disposable test project is also possible, but account setup and any charges must be approved separately. No project, subscription or deployment is created by this code.
 
-1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`, then `supabase/migrations/202610010001_equipment_editing_photos.sql` (creates the private `equipment-photos` storage bucket), then `supabase/migrations/202610020001_hcp_import.sql`. Apply only the files not yet applied; never rerun one.
+1. Apply `supabase/migrations/202609300001_foundation.sql` in the disposable database, then `supabase/seed.sql`, then `supabase/migrations/202610010001_equipment_editing_photos.sql` (creates the private `equipment-photos` storage bucket), then `supabase/migrations/202610020001_hcp_import.sql`, then `supabase/migrations/202610030001_price_book.sql` and once `supabase/seed_price_book.sql` (27 sample tasks named `TEST —`). Apply only the files not yet applied; never rerun one.
 2. Disable public signup. Create test accounts through Supabase Auth: admin@example.test, office@example.test, tech@example.test and other-tech@example.test. Use your own test passwords; none are committed. Do not send invitations or email real addresses.
 3. Using the database administrator, insert each auth user's ID into public.profiles with the corresponding role. Only a database administrator can assign roles. Example (replace the UUID with the real test Auth ID):
 
@@ -54,6 +54,9 @@ Automated Postgres policy tests use PGlite with a mocked auth.uid() and PostgreS
 
 Phase 1 is complete. The end-to-end test passed on the isolated test Supabase project on 2026-10-01 (office, assigned tech and other tech, on a computer and an iPhone), using [docs/phase-1-end-to-end-checklist.md](docs/phase-1-end-to-end-checklist.md) together with the automated tests.
 
-Next is Phase 2 (see CLAUDE.md): price book with the formula, inventory, intake by trade, and the tech job page, including offline support for techs on jobs with no cell signal.
+Phase 2 is in progress on the `phase-2` branch (see CLAUDE.md):
+
+- Built, waiting on a click-through: price book with the flat-rate formula and admin-only pricing settings. Techs see task names, what's included and prices only; labor hours, parts cost and margins are office/admin only.
+- Next: inventory, intake by trade, and the tech job page, including offline support for techs on jobs with no cell signal.
 
 Deployments and live integrations remain off.

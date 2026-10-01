@@ -7,3 +7,6 @@ export const equipmentUpdate=equipmentInput.omit({customer_id:true,trade:true}).
 export const PHOTO_MAX_BYTES=5*1024*1024;
 // Checks the file's first bytes, not just its name, so only real JPEG, PNG or WebP images are stored.
 export function photoType(bytes:Uint8Array):'jpg'|'png'|'webp'|null{const at=(i:number,...b:number[])=>b.every((x,j)=>bytes[i+j]===x);if(at(0,0xff,0xd8,0xff))return 'jpg';if(at(0,0x89,0x50,0x4e,0x47))return 'png';if(at(0,0x52,0x49,0x46,0x46)&&at(8,0x57,0x45,0x42,0x50))return 'webp';return null;}
+const amount=(max:number)=>z.coerce.number().min(0).max(max);
+export const priceTaskInput=z.object({id:z.union([z.uuid(),z.literal('')]),trade:z.enum(trades),name:z.string().trim().min(1).max(160),includes:z.string().trim().max(500),hours:amount(100).multipleOf(0.25),parts:amount(100000),mode:z.enum(['formula','custom']),custom_price:z.union([amount(1000000),z.literal('')])}).refine(x=>x.mode==='formula'||x.custom_price!=='',{message:'Enter a custom price.'});
+export const pricingSettingsInput=z.object({labor_rate:z.coerce.number().gt(0).max(10000),parts_markup:amount(1000),card_cover:z.coerce.number().min(0).lt(10),tech_cost:amount(10000),target_margin:amount(100)});

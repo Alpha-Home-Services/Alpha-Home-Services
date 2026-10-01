@@ -12,3 +12,4 @@ export async function session() {
  return {db,user,profile:profile as {id:string;display_name:string;role:Role}};
 }
 export async function officeSession(){const s=await session();if(s.profile.role==='tech') redirect('/denied?reason=office');return s;}
+export async function adminSession(){const s=await session();if(s.profile.role!=='admin') redirect(s.profile.role==='tech'?'/denied?reason=office':'/denied?reason=admin');return s;}
