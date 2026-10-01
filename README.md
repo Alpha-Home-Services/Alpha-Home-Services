@@ -58,7 +58,7 @@ Phase 2 is in progress on the `phase-2` branch (see CLAUDE.md):
 
 - Done (click-through passed 2026-10-01): price book with the flat-rate formula and admin-only pricing settings. Techs see task names, what's included and prices only; labor hours, parts cost and margins are office/admin only.
 - Done (click-through passed 2026-10-01): inventory with receiving, count corrections with a reason, and a stock history. Techs see parts, locations and counts only; cost, stock value and history are office/admin only.
-- Built, waiting on a click-through: intake by trade (New job) that creates the job, any new customer, site details and a private note in one step, with a double-booking warning; a simple job list and job page. A tech can see a customer while they have an open job there, until it's invoiced.
+- Done (click-through passed 2026-10-01): intake by trade (New job) that creates the job, any new customer, site details and a private note in one step, with a double-booking warning; a simple job list and job page. A tech can see a customer while they have an open job there, until it's invoiced.
 - Next: the tech job page, including offline support for techs on jobs with no cell signal.
 
 Deployments and live integrations remain off.
